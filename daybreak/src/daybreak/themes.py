@@ -94,7 +94,7 @@ CATPPUCCIN = {
             "0": "#5c5f77", "1": "#d20f39", "2": "#40a02b", "3": "#df8e1d",
             "4": "#1e66f5", "5": "#ea76cb", "6": "#179299", "7": "#acb0be",
             "8": "#6c6f85", "9": "#d20f39", "10": "#40a02b", "11": "#df8e1d",
-            "12": "#1e66f5", "13": "#ea76cb", "14": "#179299", "15": "#bcc0cc"
+            "12": "#1e66f5", "13": "#ea76cb", "14": "#179299", "15": "#ffffff" # Force White for status bar
         }
     }
 }
@@ -115,7 +115,7 @@ TOKYO_NIGHT = {
             "0": "#d5d6db", "1": "#f52a65", "2": "#587539", "3": "#8c6c3e",
             "4": "#2e5cb8", "5": "#9854f1", "6": "#007197", "7": "#6172b0",
             "8": "#a1a6b2", "9": "#f52a65", "10": "#587539", "11": "#8c6c3e",
-            "12": "#2e5cb8", "13": "#9854f1", "14": "#007197", "15": "#3760bf"
+            "12": "#2e5cb8", "13": "#9854f1", "14": "#007197", "15": "#ffffff" # Force White
         }
     }
 }
@@ -176,4 +176,75 @@ def get_theme_palette(theme_name):
         result["dark"] = generate_dark_from_light(result["light"])
         result["dark"]["generated"] = True
 
+    # Post-process: Ensure extended colors (16-21) exist for 256-color depth
+    # Index 16-21 are often used for background tones in Base16
+    for mode in ["light", "dark"]:
+        if mode in result:
+            _enrich_palette_depth(result[mode], mode)
+
     return result
+
+def _enrich_palette_depth(palette, mode):
+    """
+    Generates extended indices 16-21 for richer UI elements (status bars, selection).
+    Based on background/foreground variations.
+    """
+    if "colors" not in palette:
+        palette["colors"] = {}
+        
+    # We already have 0-15. Let's add 16-21.
+    # Base16 strategy usually maps:
+    # 16: Orange (often missing from ANSI)
+    # 17: Brown? 
+    # 18: Darkest Background (Selection?)
+    # 19: Lighter Background
+    # 20: Even Lighter Background
+    # 21: Lightest Background / Text
+    
+    # Our strategy:
+    # 16: Accent Color (Orange/Gold if available, else mixed)
+    # 17: Secondary Accent (Pink/Purple)
+    # 18: Background Highlight (Lighter than BG for dark mode, Darker for light)
+    # 19: Background Highlight 2 (More contrast)
+    # 20: Foreground Dimmed (Comments)
+    # 21: Foreground Bright (Bold)
+    
+    from .colors import invert_lightness, hex_to_rgb, rgb_to_hex
+    import colorsys
+    
+    bg = palette["special"]["background"]
+    fg = palette["special"]["foreground"]
+    
+    def adjust_bg(hex_c, amount):
+        r, g, b = hex_to_rgb(hex_c)
+        h, l, s = colorsys.rgb_to_hls(r/255.0, g/255.0, b/255.0)
+        # For dark mode, lighten. For light mode, darken.
+        if mode == "dark":
+             l = min(1.0, l + amount)
+        else:
+             l = max(0.0, l - amount)
+        r, g, b = colorsys.hls_to_rgb(h, l, s)
+        return rgb_to_hex((r*255, g*255, b*255))
+        
+    # 18: Selection / Status Bar BG (Slightly different from BG)
+    if "18" not in palette["colors"]:
+        palette["colors"]["18"] = adjust_bg(bg, 0.10)
+        
+    # 19: Lighter Selection
+    if "19" not in palette["colors"]:
+        palette["colors"]["19"] = adjust_bg(bg, 0.20)
+        
+    # 16: Orange (Often mapped to ANSI 11/3 or distinct)
+    # If 11 is yellow, we can try to shift it to orange for 16
+    if "16" not in palette["colors"] and "11" in palette["colors"]:
+         # Shift hue of yellow slightly to orange?
+         palette["colors"]["16"] = palette["colors"]["11"] # Fallback to Yellow/Orange
+         
+    # 20: Dimmed FG (Grayish)
+    if "20" not in palette["colors"]:
+         # Mix FG with BG?
+         palette["colors"]["20"] = palette["colors"]["8"] # Usually Bright Black / Gray
+
+    # 21: Bright FG
+    if "21" not in palette["colors"]:
+         palette["colors"]["21"] = fg

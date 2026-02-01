@@ -61,7 +61,14 @@ class ConfigManager:
             return self.get("system", key, DEFAULT_CONFIG["system"][key])
         return None
 
-    def get_terminal_theme_name(self):
+    def get_terminal_theme_name(self, mode=None):
+        # Allow separate light/dark themes
+        # If mode is provided, check for theme_light / theme_dark
+        if mode == "light":
+            return self.get("terminal", "theme_light", self.get("terminal", "theme", "Nord"))
+        elif mode == "dark":
+            return self.get("terminal", "theme_dark", self.get("terminal", "theme", "Nord"))
+            
         return self.get("terminal", "theme", "Nord")
 
 # Singleton instance

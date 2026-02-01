@@ -13,7 +13,10 @@ class UniversalPty(Terminal):
     Fetches theme from config and generates light/dark variants if needed.
     """
     def set_mode(self, mode: str):
-        theme_name = config.get_terminal_theme_name()
+        theme_name = config.get_terminal_theme_name(mode)
+        self.apply_theme(theme_name, mode)
+
+    def apply_theme(self, theme_name: str, mode: str):
         palette_set = get_theme_palette(theme_name)
         
         theme = palette_set.get(mode)
@@ -21,11 +24,9 @@ class UniversalPty(Terminal):
             logger.warning(f"Theme '{theme_name}' does not support {mode} mode.")
             return
             
-        if theme.get("generated"):
-            logger.info(f"Using auto-generated {mode} palette for {theme_name}.")
-        else:
-            logger.info(f"Using {theme_name} ({mode}) palette.")
-
+        # Only log if not in interactive/silent mode? 
+        # For now, logging is fine, it goes to stderr usually or we can suppress it in interactive.
+        
         sequences = []
         
         # 1. Special Colors (OSC 10, 11, 12)
