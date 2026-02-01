@@ -7,6 +7,7 @@ from daybreak.terminals.konsole import Konsole
 from daybreak.terminals.universal import UniversalPty
 from daybreak.terminals.neovim import Neovim
 from daybreak.browsers import Firefox, Chrome
+from daybreak.config import config
 
 logger = logging.getLogger("daybreak")
 
@@ -42,29 +43,47 @@ class KDELinuxHandler(PlatformHandler):
             return "light" # Safe default
 
     def set_mode(self, mode: str):
-        # 1. Change KDE System Theme
-        # Switched to Manjaro Breath themes
-        kde_theme = "org.manjaro.breath-dark.desktop" if mode == "dark" else "org.manjaro.breath-light.desktop"
-        
-        # Try Plasma 6 tool first, fallback to 5
-        tool = "lookandfeeltool"
+        # 1. Change KDE System Colors (App Body)
+        # ---------------------------------------
+        color_scheme = config.get_system_theme("linux_kde", mode)
         
         try:
-            # Capture both stdout and stderr to completely silence xrdb noise
-            # We only care if it fails (check=True will raise CalledProcessError)
-            subprocess.run(
-                [tool, "--apply", kde_theme], 
-                check=True, 
-                stdout=subprocess.DEVNULL, 
-                stderr=subprocess.DEVNULL
-            )
-            logger.info(f"Set KDE theme to {kde_theme}")
-        except subprocess.CalledProcessError:
-             logger.error("Failed to set KDE theme.")
-        except FileNotFoundError:
-             logger.error(f"Could not find {tool}. Is it installed?")
+            # Apply Color Scheme (Application Colors)
+            subprocess.run(["plasma-apply-colorscheme", color_scheme], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logger.info(f"Applied KDE color scheme: {color_scheme}")
+        except (subprocess.CalledProcessError, FileNotFoundError):
+             logger.error(f"Failed to apply color scheme {color_scheme}")
 
-        # 2. Update Terminals
+        # 2. Change Plasma Style (Panels, Widgets)
+        # ---------------------------------------
+        # Mapping: BreathLight -> breath-light, BreathDark -> breath-dark
+        # Ideally this should be in config, but we derive it for now or check config
+        plasma_theme = "breath-dark" if mode == "dark" else "breath-light"
+        
+        try:
+             # Try using the CLI tool if available (Plasma 6 specific mostly)
+             # plasma-apply-desktoptheme <theme>
+             subprocess.run(["plasma-apply-desktoptheme", plasma_theme], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+             logger.info(f"Applied Plasma desktop theme: {plasma_theme}")
+        except FileNotFoundError:
+            # Fallback: Write config and reload plasmashell (Older method)
+            try:
+                subprocess.run(["kwriteconfig6", "--file", "plasmarc", "--group", "Theme", "--key", "name", plasma_theme], check=True)
+                # We need to restart/reload plasmashell to pick this up effectively in some versions
+                # or rely on KGlobalSettings.
+                logger.info(f"Set plasmarc theme to {plasma_theme} (Manual write)")
+            except Exception as e:
+                logger.error(f"Failed to update plasmarc: {e}")
+        except subprocess.CalledProcessError:
+             logger.error(f"Failed to apply desktop theme {plasma_theme}")
+
+        # 3. Window Decorations (Titlebars)
+        # ---------------------------------------
+        # Usually 'Breeze' follows the color scheme. 
+        # If using a specific theme that has separate light/dark titlebars, we'd swap it here.
+        # For Breath/Breeze, changing the color scheme is usually sufficient for the titlebar *colors*.
+        
+        # 4. Update Terminals
         for term in self.terminals:
             try:
                 term.set_mode(mode)

@@ -9,7 +9,9 @@ description = "A CLI tool to toggle system and terminal themes."
 authors = [
     {name = "Your Name", email = "you@example.com"},
 ]
-dependencies = []
+dependencies = [
+    "toml",
+]
 requires-python = ">=3.7"
 
 [project.scripts]

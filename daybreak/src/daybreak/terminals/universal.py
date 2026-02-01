@@ -2,48 +2,29 @@ import os
 import glob
 import logging
 from .base import Terminal
+from daybreak.config import config
+from daybreak.themes import get_theme_palette
 
 logger = logging.getLogger("daybreak")
-
-# Nord Palette
-PALETTES = {
-    "dark": {
-        "special": {
-            "background": "#2e3440",
-            "foreground": "#d8dee9",
-            "cursor": "#d8dee9"
-        },
-        "colors": {
-            "0": "#3b4252", "1": "#bf616a", "2": "#a3be8c", "3": "#ebcb8b",
-            "4": "#81a1c1", "5": "#b48ead", "6": "#88c0d0", "7": "#e5e9f0",
-            "8": "#4c566a", "9": "#bf616a", "10": "#a3be8c", "11": "#ebcb8b",
-            "12": "#81a1c1", "13": "#b48ead", "14": "#88c0d0", "15": "#eceff4"
-        }
-    },
-    "light": {
-        "special": {
-            "background": "#e5e9f0",
-            "foreground": "#2e3440",
-            "cursor": "#2e3440"
-        },
-        "colors": {
-            "0": "#d8dee9", "1": "#bf616a", "2": "#a3be8c", "3": "#ebcb8b",
-            "4": "#5e81ac", "5": "#b48ead", "6": "#88c0d0", "7": "#3b4252",
-            "8": "#4c566a", "9": "#bf616a", "10": "#a3be8c", "11": "#ebcb8b",
-            "12": "#5e81ac", "13": "#b48ead", "14": "#88c0d0", "15": "#2e3440"
-        }
-    }
-}
 
 class UniversalPty(Terminal):
     """
     Broadcasts full 16-color palette OSC escape sequences to all open PTYs.
-    Using Nord palette as requested.
+    Fetches theme from config and generates light/dark variants if needed.
     """
     def set_mode(self, mode: str):
-        theme = PALETTES.get(mode)
+        theme_name = config.get_terminal_theme_name()
+        palette_set = get_theme_palette(theme_name)
+        
+        theme = palette_set.get(mode)
         if not theme:
+            logger.warning(f"Theme '{theme_name}' does not support {mode} mode.")
             return
+            
+        if theme.get("generated"):
+            logger.info(f"Using auto-generated {mode} palette for {theme_name}.")
+        else:
+            logger.info(f"Using {theme_name} ({mode}) palette.")
 
         sequences = []
         
@@ -74,7 +55,7 @@ class UniversalPty(Terminal):
                 pass 
         
         if count > 0:
-            logger.info(f"Broadcasted Nord palette to {count} terminals.")
+            logger.info(f"Broadcasted palette to {count} terminals.")
 
     def _write_shell_script(self, payload):
         config_dir = os.path.expanduser("~/.config/daybreak")
