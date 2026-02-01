@@ -43,7 +43,8 @@ class KDELinuxHandler(PlatformHandler):
 
     def set_mode(self, mode: str):
         # 1. Change KDE System Theme
-        kde_theme = "org.kde.breezedark.desktop" if mode == "dark" else "org.kde.breeze.desktop"
+        # Switched to Manjaro Breath themes
+        kde_theme = "org.manjaro.breath-dark.desktop" if mode == "dark" else "org.manjaro.breath-light.desktop"
         
         # Try Plasma 6 tool first, fallback to 5
         tool = "lookandfeeltool"
