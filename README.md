@@ -40,6 +40,9 @@ pip install .
 
 # Or install globally using pipx
 pipx install .
+
+# Automatically install shell hooks for Bash, Zsh, Fish, or PowerShell
+daybreak setup
 ```
 
 ## Usage
@@ -56,6 +59,9 @@ daybreak light
 
 # Open the Interactive Theme Selector
 daybreak select
+
+# Re-install or fix shell hooks
+daybreak setup
 ```
 
 ### Interactive Selector Controls

@@ -22,13 +22,18 @@ def get_platform_handler():
 
 def main():
     parser = argparse.ArgumentParser(description="Daybreak: Toggle system and application themes.")
-    parser.add_argument("mode", choices=["light", "dark", "toggle", "select"], nargs="?", default="toggle", help="Mode to switch to or 'select' for interactive UI")
+    parser.add_argument("mode", choices=["light", "dark", "toggle", "select", "setup"], nargs="?", default="toggle", help="Mode to switch to, 'select' for UI, or 'setup' to install hooks")
     
     args = parser.parse_args()
     
     if args.mode == "select":
         from daybreak.interactive import run_interactive_selector
         run_interactive_selector()
+        return
+
+    if args.mode == "setup":
+        from daybreak.shell_setup import install_shell_hook
+        install_shell_hook()
         return
 
     handler = get_platform_handler()
