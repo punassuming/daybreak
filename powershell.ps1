@@ -10,9 +10,16 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 function Resolve-PythonCommand {
-    foreach ($candidate in @("py", "python", "python3")) {
+    foreach ($candidate in @("python", "python3", "py")) {
         $cmd = Get-Command $candidate -ErrorAction SilentlyContinue
-        if ($cmd) {
+        if (-not $cmd) {
+            continue
+        }
+
+        # Some Windows setups expose `py` but it fails with
+        # "No installed Python found". Verify the command is runnable.
+        & $candidate -c "import sys; sys.exit(0)" *> $null
+        if ($LASTEXITCODE -eq 0) {
             return $cmd.Source
         }
     }
@@ -33,7 +40,7 @@ function Invoke-Daybreak {
 
     $pythonCmd = Resolve-PythonCommand
     if (-not $pythonCmd) {
-        throw "Could not find a Python executable (tried: py, python, python3)."
+        throw "Could not find a working Python executable (tried: python, python3, py)."
     }
 
     $oldPythonPath = $env:PYTHONPATH
