@@ -2,6 +2,10 @@
 
 Daybreak is a cross-platform CLI tool designed to toggle system and terminal themes instantly. It provides a unified interface to switch between Light and Dark modes across your entire OS environment, including the desktop environment (KDE Plasma), terminal emulators (Kitty, Ghostty, WezTerm, Konsole, etc.), editors (Neovim), and shell sessions.
 
+## Agent Guidance
+
+For contributor and agent implementation rules, see `AGENTS.md` in the repository root.
+
 ## Features
 
 - **System Integration:**

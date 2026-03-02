@@ -1,6 +1,4 @@
 import curses
-import toml
-import shutil
 from daybreak.themes import THEME_LIBRARY, get_theme_palette
 from daybreak.terminals.universal import UniversalPty
 from daybreak.config import config
@@ -112,8 +110,8 @@ def _interactive_loop(stdscr):
     themes = sorted(list(THEME_LIBRARY.keys()))
     
     # Load current defaults
-    saved_light = config.get("terminal", "theme_light", config.get("terminal", "theme", "Nord"))
-    saved_dark = config.get("terminal", "theme_dark", config.get("terminal", "theme", "Nord"))
+    saved_light = config.get_mode_theme_name("light")
+    saved_dark = config.get_mode_theme_name("dark")
     
     # Initialize preview mode default to dark
     preview_mode = "dark" 
@@ -212,21 +210,8 @@ def _interactive_loop(stdscr):
             break
 
 def _save_selections(light_theme, dark_theme):
-    # Update config file
     try:
-        data = config.data
-        if "terminal" not in data:
-            data["terminal"] = {}
-        
-        # Save independent defaults
-        data["terminal"]["theme_light"] = light_theme
-        data["terminal"]["theme_dark"] = dark_theme
-        # Legacy/Fallback
-        data["terminal"]["theme"] = dark_theme 
-        
-        with open(config.config_file, "w") as f:
-            toml.dump(data, f)
-            
+        config.set_mode_themes(light_theme, dark_theme)
         print(f"Saved: Light='{light_theme}', Dark='{dark_theme}'")
     except Exception as e:
         print(f"Error saving config: {e}")

@@ -1,0 +1,12 @@
+[Unit]
+Description=Trigger Daybreak Light Theme daily
+b
+[Timer]
+# Run every day at 07:00:00
+OnCalendar=*-*-* 07:00:00
+# If missed (sleep/off), run immediately on wake/boot
+Persistent=true
+Unit=daybreak-light.service
+
+[Install]
+WantedBy=timers.target

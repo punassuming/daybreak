@@ -1,0 +1,11 @@
+[Unit]
+Description=Trigger Daybreak Dark Theme daily
+
+[Timer]
+# Run every day at 19:00:00 (7 PM)
+OnCalendar=*-*-* 19:00:00
+Persistent=true
+Unit=daybreak-dark.service
+
+[Install]
+WantedBy=timers.target

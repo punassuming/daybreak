@@ -6,3 +6,6 @@ build/
 .pytest_cache/
 .coverage
 *.spec
+.tmp-tests/
+.daybreak-test-config/
+config.toml

@@ -1,0 +1,25 @@
+[Desktop Entry]
+Name=Daybreak
+Comment=Toggle System & Terminal Theme
+Exec=/home/ra/dev/linux/toggle/venv/bin/daybreak toggle
+Icon=preferences-desktop-display-color
+Type=Application
+Categories=Utility;System;
+Terminal=false
+Actions=Light;Dark;Select;
+
+[Desktop Action Light]
+Name=Switch to Light
+Exec=/home/ra/dev/linux/toggle/venv/bin/daybreak light
+Icon=weather-clear
+
+[Desktop Action Dark]
+Name=Switch to Dark
+Exec=/home/ra/dev/linux/toggle/venv/bin/daybreak dark
+Icon=weather-clear-night
+
+[Desktop Action Select]
+Name=Select Theme...
+Exec=/home/ra/dev/linux/toggle/venv/bin/daybreak select
+Icon=preferences-desktop-theme
+Terminal=true
