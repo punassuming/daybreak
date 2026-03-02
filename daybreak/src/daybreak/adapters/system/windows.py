@@ -40,10 +40,33 @@ class WindowsSystemAdapter:
             winreg.SetValueEx(key, "SystemUsesLightTheme", 0, winreg.REG_DWORD, value)
             winreg.CloseKey(key)
             logger.info(f"Registry updated for {mode} mode.")
-
-            ctypes.windll.user32.SendMessageTimeoutW(
-                0xFFFF, 0x001A, 0, "ImmersiveColorSet", 0x0002, 5000, 0
-            )
+            self._broadcast_theme_change(ctypes)
             logger.info("Broadcasted WM_SETTINGCHANGE.")
         except Exception as exc:
             logger.error(f"Failed to change Windows theme: {exc}")
+
+    def _broadcast_theme_change(self, ctypes_module):
+        # Prefer async notify to avoid synchronous message handling issues in apps
+        # that perform outgoing COM calls during WM_SETTINGCHANGE processing.
+        HWND_BROADCAST = 0xFFFF
+        WM_SETTINGCHANGE = 0x001A
+        SMTO_ABORTIFHUNG = 0x0002
+        user32 = ctypes_module.windll.user32
+        immersive_color_set = ctypes_module.c_wchar_p("ImmersiveColorSet")
+
+        notify_ok = user32.SendNotifyMessageW(
+            HWND_BROADCAST, WM_SETTINGCHANGE, 0, immersive_color_set
+        )
+
+        if notify_ok:
+            return
+
+        user32.SendMessageTimeoutW(
+            HWND_BROADCAST,
+            WM_SETTINGCHANGE,
+            0,
+            immersive_color_set,
+            SMTO_ABORTIFHUNG,
+            5000,
+            0,
+        )

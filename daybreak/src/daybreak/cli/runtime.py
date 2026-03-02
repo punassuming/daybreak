@@ -1,7 +1,7 @@
 import platform
 
 from daybreak.adapters.system import KDESystemAdapter, WindowsSystemAdapter
-from daybreak.adapters.terminal import build_linux_terminal_adapters
+from daybreak.adapters.terminal import build_linux_terminal_adapters, build_windows_terminal_adapters
 from daybreak.core import ThemeOrchestrator
 
 
@@ -17,7 +17,7 @@ def build_orchestrator() -> ThemeOrchestrator:
     if os_name == "Windows":
         return ThemeOrchestrator(
             system_adapter=WindowsSystemAdapter(),
-            terminal_adapters=[],
+            terminal_adapters=build_windows_terminal_adapters(),
         )
 
     raise NotImplementedError(f"OS {os_name} not supported yet.")

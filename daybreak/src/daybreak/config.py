@@ -27,6 +27,12 @@ DEFAULT_CONFIG = {
         "light": "Nord",
         "dark": "Nord",
     },
+    "integrations": {
+        "windows_terminal_light_scheme": "One Half Light",
+        "windows_terminal_dark_scheme": "One Half Dark",
+        "obsidian_light_theme": "moonstone",
+        "obsidian_dark_theme": "obsidian",
+    },
 }
 
 
@@ -116,6 +122,16 @@ class ConfigManager:
         if theme_cfg != normalized_theme:
             changed = True
         migrated["theme"] = normalized_theme
+
+        integrations_cfg = migrated.get("integrations")
+        if not isinstance(integrations_cfg, dict):
+            integrations_cfg = {}
+            changed = True
+        for key, default_value in DEFAULT_CONFIG["integrations"].items():
+            if key not in integrations_cfg:
+                integrations_cfg[key] = default_value
+                changed = True
+        migrated["integrations"] = integrations_cfg
 
         if "terminal" in migrated:
             migrated.pop("terminal", None)

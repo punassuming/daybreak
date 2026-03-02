@@ -9,3 +9,4 @@ build/
 .tmp-tests/
 .daybreak-test-config/
 config.toml
+.test-win-int-*/
