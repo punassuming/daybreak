@@ -3,7 +3,6 @@ Description=Daybreak Light Theme Switcher (Day Mode)
 
 [Service]
 Type=oneshot
-# Path to your daybreak executable
-ExecStart=/home/ra/dev/linux/toggle/venv/bin/daybreak light
+ExecStart=/usr/bin/env daybreak light
 # Lower priority to not slow down wakeup
 IOSchedulingClass=idle

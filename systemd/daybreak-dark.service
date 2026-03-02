@@ -3,5 +3,5 @@ Description=Daybreak Dark Theme Switcher (Night Mode)
 
 [Service]
 Type=oneshot
-ExecStart=/home/ra/dev/linux/toggle/venv/bin/daybreak dark
+ExecStart=/usr/bin/env daybreak dark
 IOSchedulingClass=idle
