@@ -2,6 +2,7 @@ import sys
 import types
 import unittest
 from pathlib import Path
+from runpy import run_module
 from unittest.mock import Mock, patch
 
 SRC_DIR = Path(__file__).resolve().parents[1] / "src"
@@ -46,6 +47,12 @@ class CLISmokeTests(unittest.TestCase):
         with patch.dict(sys.modules, {"daybreak.windows_tray": fake_module}):
             main(["tray"])
         fake_module.run_windows_tray.assert_called_once_with()
+
+    def test_package_module_entrypoint_runs_main(self):
+        with patch("daybreak.main.main") as package_main:
+            run_module("daybreak", run_name="__main__")
+
+        package_main.assert_called_once_with()
 
 
 if __name__ == "__main__":
