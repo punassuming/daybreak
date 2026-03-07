@@ -64,9 +64,6 @@ def _install_powershell_hook():
     # PowerShell Profile
     # On Windows, usually $HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1
     # or $HOME\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
-    
-    # We can try to detect common paths or rely on `subprocess` to ask PowerShell for its profile path?
-    # Running a subprocess is safest.
     try:
         # Ask PowerShell for the CurrentUserCurrentHost profile path
         result = subprocess.run(
@@ -182,10 +179,11 @@ def _install_linux_desktop_entry():
 
 def _install_windows_tray_launcher():
     command = _build_daybreak_command("tray", prefer_gui=True)
-    launcher = '\n'.join(
+    double_quote = '"'
+    launcher_script = '\n'.join(
         [
             'Set shell = CreateObject("WScript.Shell")',
-            f'shell.Run "{command.replace(chr(34), chr(34) * 2)}", 0',
+            f'shell.Run "{command.replace(double_quote, double_quote * 2)}", 0',
             "",
         ]
     )
@@ -202,7 +200,7 @@ def _install_windows_tray_launcher():
     ]
 
     for path in launchers:
-        path.write_text(launcher, encoding="utf-8")
+        path.write_text(launcher_script, encoding="utf-8")
         logger.info(f"Installed Daybreak tray launcher at {path}")
 
 def _write_hook(rc_path, hook, shell_name):
