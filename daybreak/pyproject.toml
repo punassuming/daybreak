@@ -16,3 +16,6 @@ requires-python = ">=3.7"
 
 [project.scripts]
 daybreak = "daybreak.main:main"
+
+[project.gui-scripts]
+daybreak-tray = "daybreak.windows_tray:run_windows_tray"

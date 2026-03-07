@@ -1,6 +1,11 @@
 import os
 import platform
 import logging
+import shutil
+import shlex
+import stat
+import subprocess
+import sys
 from pathlib import Path
 
 logger = logging.getLogger("daybreak")
@@ -30,7 +35,11 @@ def install_shell_hook():
     
     if system == "Windows":
         _install_powershell_hook()
+        _install_windows_tray_launcher()
         return
+
+    if system == "Linux":
+        _install_linux_desktop_entry()
 
     # Linux/Mac
     shell_path = os.environ.get("SHELL", "")
@@ -58,8 +67,6 @@ def _install_powershell_hook():
     
     # We can try to detect common paths or rely on `subprocess` to ask PowerShell for its profile path?
     # Running a subprocess is safest.
-    import subprocess
-    
     try:
         # Ask PowerShell for the CurrentUserCurrentHost profile path
         result = subprocess.run(
@@ -91,6 +98,112 @@ def _install_powershell_hook():
         logger.warning("PowerShell executable not found.")
     except Exception as e:
         logger.error(f"Failed to install PowerShell hook: {e}")
+
+
+def _get_linux_applications_dir() -> Path:
+    return Path.home() / ".local" / "share" / "applications"
+
+
+def _get_windows_programs_dir() -> Path:
+    appdata = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+    return appdata / "Microsoft" / "Windows" / "Start Menu" / "Programs"
+
+
+def _get_windows_startup_dir() -> Path:
+    return _get_windows_programs_dir() / "Startup"
+
+
+def _build_daybreak_command(*args, prefer_gui=False) -> str:
+    gui_executable = None
+    if prefer_gui:
+        gui_executable = shutil.which("daybreak-tray.exe") or shutil.which("daybreak-tray")
+
+    if gui_executable:
+        parts = [gui_executable]
+    else:
+        executable = shutil.which("daybreak.exe") or shutil.which("daybreak")
+        if executable:
+            parts = [executable, *args]
+        else:
+            python_executable = Path(sys.executable)
+            if prefer_gui and python_executable.name.lower() == "python.exe":
+                pythonw = python_executable.with_name("pythonw.exe")
+                if pythonw.exists():
+                    python_executable = pythonw
+            parts = [str(python_executable), "-m", "daybreak", *args]
+
+    if platform.system() == "Windows":
+        return subprocess.list2cmdline(parts)
+
+    return shlex.join(parts)
+
+
+def _install_linux_desktop_entry():
+    applications_dir = _get_linux_applications_dir()
+    applications_dir.mkdir(parents=True, exist_ok=True)
+    desktop_file = applications_dir / "daybreak.desktop"
+    command = _build_daybreak_command()
+    desktop_file.write_text(
+        "\n".join(
+            [
+                "[Desktop Entry]",
+                "Name=Daybreak",
+                "Comment=Toggle System & Terminal Theme",
+                f"Exec={command} toggle",
+                "Icon=preferences-desktop-display-color",
+                "Type=Application",
+                "Categories=Utility;System;",
+                "Terminal=false",
+                "Actions=Light;Dark;Select;",
+                "",
+                "[Desktop Action Light]",
+                "Name=Switch to Light",
+                f"Exec={command} light",
+                "Icon=weather-clear",
+                "",
+                "[Desktop Action Dark]",
+                "Name=Switch to Dark",
+                f"Exec={command} dark",
+                "Icon=weather-clear-night",
+                "",
+                "[Desktop Action Select]",
+                "Name=Select Theme...",
+                f"Exec={command} select",
+                "Icon=preferences-desktop-theme",
+                "Terminal=true",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    desktop_file.chmod(desktop_file.stat().st_mode | stat.S_IXUSR)
+    logger.info(f"Installed Daybreak desktop launcher at {desktop_file}")
+
+
+def _install_windows_tray_launcher():
+    command = _build_daybreak_command("tray", prefer_gui=True)
+    launcher = '\n'.join(
+        [
+            'Set shell = CreateObject("WScript.Shell")',
+            f'shell.Run "{command.replace(chr(34), chr(34) * 2)}", 0',
+            "",
+        ]
+    )
+
+    programs_dir = _get_windows_programs_dir()
+    startup_dir = _get_windows_startup_dir()
+
+    for directory in (programs_dir, startup_dir):
+        directory.mkdir(parents=True, exist_ok=True)
+
+    launchers = [
+        programs_dir / "Daybreak Tray.vbs",
+        startup_dir / "Daybreak Tray.vbs",
+    ]
+
+    for path in launchers:
+        path.write_text(launcher, encoding="utf-8")
+        logger.info(f"Installed Daybreak tray launcher at {path}")
 
 def _write_hook(rc_path, hook, shell_name):
     if not rc_path.exists():

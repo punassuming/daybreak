@@ -40,6 +40,13 @@ class CLISmokeTests(unittest.TestCase):
             main(["setup"])
         fake_module.install_shell_hook.assert_called_once_with()
 
+    def test_tray_dispatches_to_windows_tray(self):
+        fake_module = types.ModuleType("daybreak.windows_tray")
+        fake_module.run_windows_tray = Mock()
+        with patch.dict(sys.modules, {"daybreak.windows_tray": fake_module}):
+            main(["tray"])
+        fake_module.run_windows_tray.assert_called_once_with()
+
 
 if __name__ == "__main__":
     unittest.main()

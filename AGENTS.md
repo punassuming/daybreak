@@ -8,8 +8,9 @@ This file is the single source of truth for contributor and agent workflows in t
 - Maintain compatibility for current CLI commands.
 
 ## Repository Map
-- `daybreak/src/daybreak/cli/main.py`: CLI command entry (`toggle|light|dark|select|setup`).
+- `daybreak/src/daybreak/cli/main.py`: CLI command entry (`toggle|light|dark|select|setup|tray`).
 - `daybreak/src/daybreak/cli/runtime.py`: OS runtime wiring into the orchestrator.
+- `daybreak/src/daybreak/windows_tray.py`: Windows tray icon loop and tooltip/menu actions.
 - `daybreak/src/daybreak/core/orchestrator.py`: unified apply/toggle pipeline.
 - `daybreak/src/daybreak/core/theme_registry.py`: theme lookup and mode resolution.
 - `daybreak/src/daybreak/core/theme_transform.py`: semantic token conversion + contrast-safe token normalization.
@@ -64,6 +65,7 @@ This file is the single source of truth for contributor and agent workflows in t
 - `daybreak dark`
 - `daybreak select`
 - `daybreak setup`
+- `daybreak tray`
 - `python -m unittest discover -s daybreak/tests`
 
 ## Known Limitations

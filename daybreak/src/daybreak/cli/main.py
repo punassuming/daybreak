@@ -11,10 +11,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Daybreak: Toggle system and application themes.")
     parser.add_argument(
         "mode",
-        choices=["light", "dark", "toggle", "select", "setup"],
+        choices=["light", "dark", "toggle", "select", "setup", "tray"],
         nargs="?",
         default="toggle",
-        help="Mode to switch to, 'select' for UI, or 'setup' to install hooks",
+        help="Mode to switch to, 'select' for UI, 'setup' to install hooks, or 'tray' for Windows tray mode",
     )
     args = parser.parse_args(argv)
 
@@ -28,6 +28,12 @@ def main(argv=None):
         from daybreak.shell_setup import install_shell_hook
 
         install_shell_hook()
+        return
+
+    if args.mode == "tray":
+        from daybreak.windows_tray import run_windows_tray
+
+        run_windows_tray()
         return
 
     orchestrator = build_orchestrator()

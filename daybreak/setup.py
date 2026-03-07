@@ -9,5 +9,8 @@ setup(
         "console_scripts": [
             "daybreak=daybreak.main:main",
         ],
+        "gui_scripts": [
+            "daybreak-tray=daybreak.windows_tray:run_windows_tray",
+        ],
     },
 )
