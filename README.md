@@ -23,6 +23,9 @@ For contributor and agent implementation rules, see `AGENTS.md` in the repositor
     - Visual mocks for Code, Diff, and Status Bars to verify contrast.
 - **Persistence:**
     - Automatically generates startup scripts for Bash, Zsh, Fish, and PowerShell so new terminals match the active theme.
+- **No-Terminal Launchers:**
+    - Installs a Linux desktop launcher so KDE users can toggle Daybreak from the app menu or a pinned panel item.
+    - Installs a Windows tray launcher with a live tooltip and light/dark/toggle actions.
 
 ## Installation
 
@@ -66,7 +69,16 @@ daybreak select
 
 # Re-install or fix shell hooks
 daybreak setup
+
+# Run the Windows tray icon directly
+daybreak tray
 ```
+
+### Desktop & Tray Usage
+
+- **Linux (KDE-first):** `daybreak setup` now installs `~/.local/share/applications/daybreak.desktop`, so you can launch Daybreak from your application launcher, pin it to the panel, and use the Light/Dark quick actions without opening a terminal.
+- **Windows:** `daybreak setup` now installs hidden tray launchers in your Start Menu and Startup folder. The tray tooltip shows the current mode, double-click toggles light/dark, and right-click opens a menu with **Toggle**, **Light**, **Dark**, and **Exit**.
+- **Direct tray launch:** Windows installs also expose a `daybreak-tray` GUI entry point for launching the tray icon without a console window.
 
 ### Interactive Selector Controls
 - **UP/DOWN:** Navigate themes.
