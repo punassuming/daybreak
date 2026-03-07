@@ -9,7 +9,7 @@ For contributor and agent implementation rules, see `AGENTS.md` in the repositor
 ## Features
 
 - **System Integration:**
-    - **KDE Plasma 6:** Toggles "Colors" and "Plasma Styles" independently, preserving your window decorations and layout.
+    - **KDE Plasma 6:** Toggles "Colors" and "Plasma Styles" independently, preserving your window decorations and layout.  Generates a `DaybreakTheme.colors` colorscheme file (with accent colors derived from the active palette) that users can optionally adopt via `linux_kde_light/dark` config keys.
     - **Windows 11:** Toggles System and App theme registry keys and broadcasts changes.
 - **Universal Terminal Support:**
     - Instantly recolors *all* open terminal windows using OSC escape sequences (works with any xterm-compatible terminal).
@@ -17,6 +17,9 @@ For contributor and agent implementation rules, see `AGENTS.md` in the repositor
 - **Theme Engine:**
     - **Built-in Library:** Includes Nord, Gruvbox, Dracula, Solarized, Catppuccin, Tokyo Night, Monokai, and One Dark.
     - **Algorithmic Contrast:** Automatically generates high-contrast Light modes for dark-only themes (like Monokai/Dracula) using WCAG luminance calculations.
+    - **Accent Tokens:** Derives semantic accent colors (primary, secondary, success, warning, error, selection) from every palette using the same contrast utilities.
+- **Shared Theme State:**
+    - Daybreak publishes its current theme to `~/.config/daybreak/` after every mode switch.  See [Generated Artifacts](#generated-artifacts) below.
 - **Interactive Selector:**
     - Live split-screen preview of themes.
     - Independent defaults for Light and Dark modes.
@@ -109,6 +112,38 @@ if (Test-Path "$HOME/.config/daybreak/theme.ps1") {
     . "$HOME/.config/daybreak/theme.ps1"
 }
 ```
+
+## Generated Artifacts
+
+Every time Daybreak applies a theme it writes machine-readable state files to `~/.config/daybreak/`.  These files are **Daybreak-owned** — they represent Daybreak's current state and are safe for other tools or dotfiles to consume voluntarily.  Daybreak does **not** edit arbitrary third-party application config files.
+
+| File | Description |
+|------|-------------|
+| `palette.json` | Full palette, semantic tokens, and accent tokens in JSON |
+| `env.sh` | POSIX shell exports for `DAYBREAK_*` theme variables |
+| `ls_colors.sh` | `LS_COLORS` export derived from the active theme |
+
+### Example: sourcing theme variables
+
+```bash
+# ~/.bashrc or ~/.zshrc
+[ -f "$HOME/.config/daybreak/env.sh" ] && . "$HOME/.config/daybreak/env.sh"
+[ -f "$HOME/.config/daybreak/ls_colors.sh" ] && . "$HOME/.config/daybreak/ls_colors.sh"
+```
+
+This gives you variables such as `DAYBREAK_THEME`, `DAYBREAK_MODE`, `DAYBREAK_ACCENT_PRIMARY`, `DAYBREAK_COLOR_BG`, etc. that you can reference in your own scripts or prompt customisations.
+
+### KDE Accent Colorscheme
+
+On Linux, Daybreak also writes `~/.local/share/color-schemes/DaybreakTheme.colors` — a standard KDE INI colorscheme with accent colors derived from the active palette.  It is **not applied automatically**; to use it, set the following in `~/.config/daybreak/config.toml`:
+
+```toml
+[system]
+linux_kde_light = "DaybreakTheme"
+linux_kde_dark  = "DaybreakTheme"
+```
+
+Then run `daybreak light` or `daybreak dark` to apply the generated scheme.
 
 ## Neovim Integration
 

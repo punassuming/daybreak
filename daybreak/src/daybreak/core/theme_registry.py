@@ -1,6 +1,6 @@
 from daybreak.themes import THEME_LIBRARY, get_theme_palette
 from .theme_model import normalize_mode, validate_tokens
-from .theme_transform import palette_to_tokens
+from .theme_transform import palette_to_tokens, palette_to_accent_tokens
 
 
 class ThemeRegistry:
@@ -20,14 +20,20 @@ class ThemeRegistry:
         validate_tokens(tokens)
         return tokens
 
+    def get_accent_tokens(self, theme_name: str, mode: str) -> dict:
+        palette = self.get_palette(theme_name, mode)
+        return palette_to_accent_tokens(palette, mode)
+
     def get_theme(self, theme_name: str, mode: str) -> dict:
         normalized_mode = normalize_mode(mode)
         tokens = self.get_tokens(theme_name, normalized_mode)
+        accent_tokens = self.get_accent_tokens(theme_name, normalized_mode)
         palette = self.get_palette(theme_name, normalized_mode)
         return {
             "id": theme_name.lower().replace(" ", "-"),
             "name": theme_name,
             "mode": normalized_mode,
             "tokens": tokens,
+            "accent_tokens": accent_tokens,
             "palette": palette,
         }

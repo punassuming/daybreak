@@ -44,3 +44,33 @@ def palette_to_tokens(palette: dict, mode: str) -> dict:
         tokens[key] = adjust_color_for_contrast(tokens[key], bg, min_ratio=4.0)
 
     return tokens
+
+
+def palette_to_accent_tokens(palette: dict, mode: str) -> dict:
+    """Derive semantic accent tokens from a palette using contrast-safe utilities."""
+    special = palette.get("special", {})
+    colors = palette.get("colors", {})
+
+    bg = _fallback(special.get("background"), "#111111" if mode == "dark" else "#f5f5f5")
+
+    accent_primary = _fallback(colors.get("4"), _fallback(special.get("foreground"), bg))
+    accent_secondary = _fallback(colors.get("5"), accent_primary)
+    accent_success = _fallback(colors.get("2"), _fallback(special.get("foreground"), bg))
+    accent_warning = _fallback(colors.get("3"), accent_primary)
+    accent_error = _fallback(colors.get("1"), accent_primary)
+    accent_selection = _fallback(colors.get("18"), bg)
+
+    accents = {
+        "accent_primary": accent_primary,
+        "accent_secondary": accent_secondary,
+        "accent_success": accent_success,
+        "accent_warning": accent_warning,
+        "accent_error": accent_error,
+        "accent_selection": accent_selection,
+    }
+
+    # Ensure foreground accent colors meet a minimum contrast against background.
+    for key in ("accent_primary", "accent_secondary", "accent_success", "accent_warning", "accent_error"):
+        accents[key] = adjust_color_for_contrast(accents[key], bg, min_ratio=3.0)
+
+    return accents

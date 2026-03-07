@@ -12,10 +12,11 @@ This file is the single source of truth for contributor and agent workflows in t
 - `daybreak/src/daybreak/cli/runtime.py`: OS runtime wiring into the orchestrator.
 - `daybreak/src/daybreak/windows_tray.py`: Windows tray icon loop and tooltip/menu actions.
 - `daybreak/src/daybreak/core/orchestrator.py`: unified apply/toggle pipeline.
-- `daybreak/src/daybreak/core/theme_registry.py`: theme lookup and mode resolution.
-- `daybreak/src/daybreak/core/theme_transform.py`: semantic token conversion + contrast-safe token normalization.
-- `daybreak/src/daybreak/core/theme_model.py`: token schema and validation.
-- `daybreak/src/daybreak/adapters/system/kde.py`: KDE system-mode application.
+- `daybreak/src/daybreak/core/theme_registry.py`: theme lookup and mode resolution; exposes `get_accent_tokens()`.
+- `daybreak/src/daybreak/core/theme_transform.py`: semantic token conversion + contrast-safe token normalization; `palette_to_accent_tokens()` derives accent tokens.
+- `daybreak/src/daybreak/core/theme_model.py`: token schema and validation; defines `TOKEN_KEYS` and `ACCENT_KEYS`.
+- `daybreak/src/daybreak/core/artifacts.py`: generates Daybreak-owned shared theme artifacts (`palette.json`, `env.sh`, `ls_colors.sh`) in the config directory after every mode switch.
+- `daybreak/src/daybreak/adapters/system/kde.py`: KDE system-mode application; writes `DaybreakTheme.colors` to `~/.local/share/color-schemes/`.
 - `daybreak/src/daybreak/adapters/system/windows.py`: Windows registry + broadcast mode application.
 - `daybreak/src/daybreak/adapters/terminal/wrappers.py`: terminal adapter wrappers.
 - `daybreak/src/daybreak/adapters/terminal/builders.py`: Linux terminal adapter set.
@@ -30,6 +31,7 @@ This file is the single source of truth for contributor and agent workflows in t
 - `adapters/*` define platform/integration side effects.
 - `config.py` owns persisted schema and migration from legacy config layouts.
 - `themes.py` remains the built-in palette library; semantic tokens are derived from palettes.
+- Daybreak publishes shared theme state via **generated artifacts** in its config directory.  It does not take ownership of user application preference files (VS Code, Obsidian, etc.).
 
 ## Implementation Rules
 - Treat Linux support in this codebase as KDE-first unless explicitly expanded.
@@ -37,6 +39,8 @@ This file is the single source of truth for contributor and agent workflows in t
 - Keep Windows changes limited to documented theme registry keys and broadcast.
 - Preserve contrast behavior by using `colors.py` utilities instead of hand-tuned per-theme edits.
 - Avoid claiming support for integrations that are placeholder-only.
+- Artifact generation (`core/artifacts.py`) must be fail-safe: failures are logged at WARNING and never abort the apply pipeline.
+- The `set_mode(mode, palette=None)` interface on system adapters accepts an optional palette so the orchestrator can pass live palette data without breaking existing adapter implementations.
 
 ## Common Workflows
 
@@ -48,7 +52,8 @@ This file is the single source of truth for contributor and agent workflows in t
 ### Add or Update a System Adapter
 1. Implement adapter in `daybreak/src/daybreak/adapters/system/`.
 2. Keep detection (`get_current_mode`) and application (`set_mode`) deterministic.
-3. Wire adapter in `daybreak/src/daybreak/cli/runtime.py`.
+3. Signature: `set_mode(self, mode: str, palette: dict = None)` — accept but ignore palette if unused.
+4. Wire adapter in `daybreak/src/daybreak/cli/runtime.py`.
 
 ### Add or Update a Terminal Adapter
 1. Implement integration in `daybreak/src/daybreak/terminals/` if new terminal-specific logic is needed.
@@ -72,6 +77,7 @@ This file is the single source of truth for contributor and agent workflows in t
 - Linux behavior is focused on KDE.
 - Some terminal integrations are best-effort or rely on user-side include/reload configuration.
 - No external CI is configured in this repository yet.
+- `DaybreakTheme.colors` (KDE) is generated but not applied automatically; users must configure it via `linux_kde_light / linux_kde_dark` keys.
 
 ## Maintenance Contract
 Update this file whenever any of the following changes:

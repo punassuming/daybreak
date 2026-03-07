@@ -24,7 +24,7 @@ class WindowsSystemAdapter:
             logger.error(f"Failed to read Windows registry: {exc}")
             return "light"
 
-    def set_mode(self, mode: str):
+    def set_mode(self, mode: str, palette: dict = None):
         if platform.system() != "Windows":
             logger.warning("Not running on Windows, skipping registry changes.")
             return
