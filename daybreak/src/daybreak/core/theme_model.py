@@ -17,6 +17,15 @@ TOKEN_KEYS = (
     "surface_3",
 )
 
+ACCENT_KEYS = (
+    "accent_primary",
+    "accent_secondary",
+    "accent_success",
+    "accent_warning",
+    "accent_error",
+    "accent_selection",
+)
+
 
 def normalize_mode(mode: str) -> str:
     normalized = (mode or "").strip().lower()

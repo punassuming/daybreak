@@ -1,6 +1,7 @@
 import logging
 
 from daybreak.config import config
+from daybreak.core.artifacts import generate_artifacts
 from .theme_model import normalize_mode
 from .theme_registry import ThemeRegistry
 
@@ -28,7 +29,7 @@ class ThemeOrchestrator:
         palette = self.registry.get_palette(resolved_theme, normalized_mode)
 
         if self.system_adapter:
-            self.system_adapter.set_mode(normalized_mode)
+            self.system_adapter.set_mode(normalized_mode, palette=palette)
 
         for adapter in self.terminal_adapters:
             try:
@@ -36,6 +37,13 @@ class ThemeOrchestrator:
             except Exception as exc:
                 name = getattr(adapter, "name", adapter.__class__.__name__)
                 logger.warning(f"Terminal adapter '{name}' failed: {exc}")
+
+        try:
+            tokens = self.registry.get_tokens(resolved_theme, normalized_mode)
+            accent_tokens = self.registry.get_accent_tokens(resolved_theme, normalized_mode)
+            generate_artifacts(config.config_dir, resolved_theme, normalized_mode, tokens, accent_tokens, palette)
+        except Exception as exc:
+            logger.warning(f"Failed to generate theme artifacts: {exc}")
 
         return resolved_theme
 
