@@ -167,6 +167,97 @@ def _render_mode_icon_pixels(mode: str, size: int = 32) -> bytes:
     return bytes(pixels)
 
 
+def _activate_visual_styles():
+    """Enable comctl32 v6 visual styles via a temporary activation context."""
+    import ctypes
+    import os
+    import tempfile
+
+    manifest = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">'
+        "<dependency><dependentAssembly>"
+        '<assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls"'
+        ' version="6.0.0.0" processorArchitecture="*"'
+        ' publicKeyToken="6595b64144ccf1df" language="*"/>'
+        "</dependentAssembly></dependency>"
+        "</assembly>"
+    )
+    try:
+        class ACTCTXW(ctypes.Structure):
+            _fields_ = [
+                ("cbSize", ctypes.c_ulong),
+                ("dwFlags", ctypes.c_ulong),
+                ("lpSource", ctypes.c_wchar_p),
+                ("wProcessorArchitecture", ctypes.c_ushort),
+                ("wLangId", ctypes.c_ushort),
+                ("lpAssemblyDirectory", ctypes.c_wchar_p),
+                ("lpResourceName", ctypes.c_wchar_p),
+                ("lpApplicationName", ctypes.c_wchar_p),
+                ("hModule", ctypes.c_void_p),
+            ]
+
+        kernel32 = ctypes.windll.kernel32
+        kernel32.CreateActCtxW.restype = ctypes.c_void_p
+        kernel32.ActivateActCtx.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulong)]
+        kernel32.ActivateActCtx.restype = ctypes.c_bool
+
+        fd, path = tempfile.mkstemp(suffix=".manifest")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(manifest)
+            act = ACTCTXW()
+            act.cbSize = ctypes.sizeof(ACTCTXW)
+            act.lpSource = path
+            h = kernel32.CreateActCtxW(ctypes.byref(act))
+            # INVALID_HANDLE_VALUE is 0xFFFFFFFFFFFFFFFF; c_void_p returns None for NULL
+            if h and h != ctypes.c_ulong(-1).value:
+                cookie = ctypes.c_ulong()
+                kernel32.ActivateActCtx(h, ctypes.byref(cookie))
+        finally:
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
+    except Exception:
+        pass
+
+
+def _setup_dark_mode(hwnd=None):
+    """Allow dark mode for menus via undocumented uxtheme APIs (Windows 10 1903+)."""
+    try:
+        import ctypes
+
+        uxtheme = ctypes.WinDLL("uxtheme.dll", use_last_error=True)
+        # Ordinal 135: SetPreferredAppMode(mode: int) — 1 = AllowDark
+        try:
+            set_mode = uxtheme[135]
+            set_mode.restype = ctypes.c_int
+            set_mode.argtypes = [ctypes.c_int]
+            set_mode(1)
+        except Exception:
+            pass
+        if hwnd:
+            # Ordinal 133: AllowDarkModeForWindow(hwnd, allow: bool)
+            try:
+                allow = uxtheme[133]
+                allow.restype = ctypes.c_bool
+                allow.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+                allow(hwnd, True)
+            except Exception:
+                pass
+        # Ordinal 136: FlushMenuThemes()
+        try:
+            flush = uxtheme[136]
+            flush.restype = None
+            flush.argtypes = []
+            flush()
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+
 def _signed_word(value: int) -> int:
     word = value & 0xFFFF
     return word - 0x10000 if word & 0x8000 else word
@@ -244,6 +335,13 @@ def run_windows_tray():
 
     import ctypes
     from ctypes import wintypes
+
+    # Enable DPI awareness, visual styles, and dark mode before any window creation
+    try:
+        ctypes.windll.user32.SetProcessDPIAware()
+    except Exception:
+        pass
+    _activate_visual_styles()
 
     user32 = ctypes.windll.user32
     kernel32 = ctypes.windll.kernel32
@@ -558,6 +656,8 @@ def run_windows_tray():
 
     if not hwnd:
         raise OSError("Failed to create Daybreak tray window.")
+
+    _setup_dark_mode(hwnd)
 
     notify_data = NOTIFYICONDATAW()
     notify_data.cbSize = ctypes.sizeof(NOTIFYICONDATAW)
