@@ -14,7 +14,7 @@ def main(argv=None):
         choices=["light", "dark", "toggle", "select", "setup", "tray"],
         nargs="?",
         default="toggle",
-        help="Mode to switch to, 'select' for UI, 'setup' to install hooks, or 'tray' for Windows tray mode",
+        help="Mode to switch to, 'select' for UI, 'setup' to install hooks, or 'tray' for system tray mode",
     )
     args = parser.parse_args(argv)
 
@@ -31,9 +31,18 @@ def main(argv=None):
         return
 
     if args.mode == "tray":
-        from daybreak.windows_tray import run_windows_tray
+        import platform as _platform
 
-        run_windows_tray()
+        if _platform.system() == "Windows":
+            from daybreak.windows_tray import run_windows_tray
+
+            run_windows_tray()
+        elif _platform.system() == "Linux":
+            from daybreak.linux_tray import run_linux_tray
+
+            run_linux_tray()
+        else:
+            raise RuntimeError(f"Tray mode is not supported on {_platform.system()}.")
         return
 
     orchestrator = build_orchestrator()

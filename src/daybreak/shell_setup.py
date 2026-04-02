@@ -40,6 +40,7 @@ def install_shell_hook():
 
     if system == "Linux":
         _install_linux_desktop_entry()
+        _install_linux_tray_autostart()
 
     # Linux/Mac
     shell_path = os.environ.get("SHELL", "")
@@ -175,6 +176,35 @@ def _install_linux_desktop_entry():
     )
     desktop_file.chmod(desktop_file.stat().st_mode | stat.S_IXUSR)
     logger.info(f"Installed Daybreak desktop launcher at {desktop_file}")
+
+
+def _install_linux_tray_autostart():
+    autostart_dir = Path.home() / ".config" / "autostart"
+    autostart_dir.mkdir(parents=True, exist_ok=True)
+    desktop_file = autostart_dir / "daybreak-tray.desktop"
+    command = _build_daybreak_command("tray")
+    desktop_file.write_text(
+        "\n".join(
+            [
+                "[Desktop Entry]",
+                "Name=Daybreak Tray",
+                "Comment=Daybreak theme-switcher system tray icon",
+                f"Exec={command}",
+                "Icon=preferences-desktop-display-color",
+                "Type=Application",
+                "Categories=Utility;System;",
+                "Terminal=false",
+                "X-KDE-autostart-after=panel",
+                "X-KDE-StartupNotify=false",
+                "X-GNOME-Autostart-enabled=true",
+                "Hidden=false",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    desktop_file.chmod(desktop_file.stat().st_mode | stat.S_IXUSR)
+    logger.info(f"Installed Daybreak tray autostart at {desktop_file}")
 
 
 def _install_windows_tray_launcher():

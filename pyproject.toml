@@ -14,8 +14,14 @@ dependencies = [
 ]
 requires-python = ">=3.7"
 
+[project.optional-dependencies]
+linux-tray = [
+    "dbus-python>=1.2",
+]
+
 [project.scripts]
 daybreak = "daybreak.main:main"
+daybreak-tray-linux = "daybreak.linux_tray:run_linux_tray"
 
 [project.gui-scripts]
 daybreak-tray = "daybreak.windows_tray:run_windows_tray"

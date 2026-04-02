@@ -41,12 +41,21 @@ class CLISmokeTests(unittest.TestCase):
             main(["setup"])
         fake_module.install_shell_hook.assert_called_once_with()
 
-    def test_tray_dispatches_to_windows_tray(self):
-        fake_module = types.ModuleType("daybreak.windows_tray")
-        fake_module.run_windows_tray = Mock()
-        with patch.dict(sys.modules, {"daybreak.windows_tray": fake_module}):
-            main(["tray"])
-        fake_module.run_windows_tray.assert_called_once_with()
+    def test_tray_dispatches_to_platform_tray(self):
+        import platform as _platform
+
+        if _platform.system() == "Windows":
+            fake_module = types.ModuleType("daybreak.windows_tray")
+            fake_module.run_windows_tray = Mock()
+            with patch.dict(sys.modules, {"daybreak.windows_tray": fake_module}):
+                main(["tray"])
+            fake_module.run_windows_tray.assert_called_once_with()
+        else:
+            fake_module = types.ModuleType("daybreak.linux_tray")
+            fake_module.run_linux_tray = Mock()
+            with patch.dict(sys.modules, {"daybreak.linux_tray": fake_module}):
+                main(["tray"])
+            fake_module.run_linux_tray.assert_called_once_with()
 
     def test_package_module_entrypoint_runs_main(self):
         with patch("daybreak.main.main") as package_main:
