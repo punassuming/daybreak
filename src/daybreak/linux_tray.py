@@ -35,7 +35,7 @@ def _render_sni_icon_pixels(mode: str, size: int = 22) -> bytes:
 
 
 def _encode_pixmap_for_dbus(pixels: bytes, size: int):
-    """Wrap icon pixels in the SNI IconPixmap DBus type a(iiay)."""
+    """Wrap icon pixels in the SNI IconPixmap DBus type a(iiay) for dbus-python."""
     import dbus
 
     data = dbus.Array([dbus.Byte(b) for b in pixels], signature="y")
@@ -105,23 +105,16 @@ class LinuxTrayController:
         return True
 
 
-def run_linux_tray():
-    if platform.system() != "Linux":
-        raise RuntimeError("Linux tray mode is only available on Linux.")
+# ---------------------------------------------------------------------------
+# Backend: dbus-python + GLib (C extension, usually pre-installed on KDE)
+# ---------------------------------------------------------------------------
 
-    try:
-        import dbus
-        import dbus.bus
-        import dbus.service
-        import dbus.mainloop.glib
-        from gi.repository import GLib
-    except ImportError as exc:
-        raise SystemExit(
-            "dbus-python and PyGObject are required for the Linux tray.\n"
-            "  pip install dbus-python\n"
-            "PyGObject must be installed as a system package (python-gobject).\n"
-            f"Error: {exc}"
-        )
+def _run_tray_dbus_python():
+    import dbus
+    import dbus.bus
+    import dbus.service
+    import dbus.mainloop.glib
+    from gi.repository import GLib
 
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
@@ -351,3 +344,264 @@ def run_linux_tray():
             bus.release_name(service_name)
         except Exception:
             pass
+
+
+# ---------------------------------------------------------------------------
+# Backend: dbus-fast (pure Python, pip install dbus-fast)
+# ---------------------------------------------------------------------------
+
+async def _run_tray_dbus_fast():
+    import asyncio
+    from dbus_fast.aio import MessageBus
+    from dbus_fast.service import ServiceInterface, method, signal, dbus_property
+    from dbus_fast.constants import BusType, PropertyAccess
+    from dbus_fast import Variant
+
+    stop_event = asyncio.Event()
+
+    class _DbusMenuInterface(ServiceInterface):
+        def __init__(self, controller):
+            super().__init__(_DBUSMENU_IFACE)
+            self._controller = controller
+            self._revision = 1
+            self._sni_iface = None
+
+        def _make_item(self, item_id, label=None, enabled=True, item_type=None,
+                       toggle_type=None, toggle_state=0):
+            props = {}
+            if label is not None:
+                props["label"] = Variant("s", label)
+            if not enabled:
+                props["enabled"] = Variant("b", False)
+            if item_type:
+                props["type"] = Variant("s", item_type)
+            if toggle_type:
+                props["toggle-type"] = Variant("s", toggle_type)
+                props["toggle-state"] = Variant("i", toggle_state)
+            return Variant("(ia{sv}av)", [item_id, props, []])
+
+        def _build_tree(self):
+            mode = self._controller.current_mode
+            children = [
+                self._make_item(9000, self._controller.status_text(), enabled=False),
+                self._make_item(9001, item_type="separator"),
+                self._make_item(ID_TOGGLE, "Toggle"),
+                self._make_item(ID_LIGHT, "Switch to Light",
+                                toggle_type="radio",
+                                toggle_state=1 if mode == "light" else 0),
+                self._make_item(ID_DARK, "Switch to Dark",
+                                toggle_type="radio",
+                                toggle_state=1 if mode == "dark" else 0),
+                self._make_item(9002, item_type="separator"),
+                self._make_item(ID_OPEN_CONFIG, "Open Config"),
+                self._make_item(ID_RUN_SETUP, "Run Setup"),
+                self._make_item(9003, item_type="separator"),
+                self._make_item(ID_EXIT, "Exit"),
+            ]
+            root_props = {"children-display": Variant("s", "submenu")}
+            return [0, root_props, children]
+
+        @method()
+        def GetLayout(self, parentId: "i", recursionDepth: "i", propertyNames: "as") -> "u(ia{sv}av)":
+            return [self._revision, self._build_tree()]
+
+        @method()
+        def GetGroupProperties(self, ids: "ai", propertyNames: "as") -> "a(ia{sv})":
+            return []
+
+        @method()
+        def GetProperty(self, item_id: "i", name: "s") -> "v":
+            return Variant("s", "")
+
+        @method()
+        def Event(self, item_id: "i", event_id: "s", data: "v", timestamp: "u") -> None:
+            if event_id != "clicked":
+                return
+            should_continue = self._controller.handle_command(int(item_id))
+            if not should_continue:
+                stop_event.set()
+                return
+            self._revision += 1
+            self.LayoutUpdated(self._revision, 0)
+            if self._sni_iface:
+                self._sni_iface.NewIcon()
+                self._sni_iface.NewToolTip()
+
+        @method()
+        def AboutToShow(self, item_id: "i") -> "b":
+            return False
+
+        @method()
+        def AboutToShowGroup(self, ids: "ai") -> "ab":
+            return [False] * len(ids)
+
+        @signal()
+        def LayoutUpdated(self, revision: "u", parentId: "i") -> None:
+            pass
+
+        @signal()
+        def ItemsPropertiesUpdated(self, updatedProps: "a(ia{sv})", removedProps: "a(ias)") -> None:
+            pass
+
+    class _SniInterface(ServiceInterface):
+        def __init__(self, controller, menu_path):
+            super().__init__(_SNI_IFACE)
+            self._controller = controller
+            self._menu_path = menu_path
+
+        def _pixmap(self):
+            pixels = _render_sni_icon_pixels(self._controller.current_mode, 22)
+            return [[22, 22, pixels]]
+
+        @dbus_property(access=PropertyAccess.READ)
+        def Category(self) -> "s":
+            return "ApplicationStatus"
+
+        @dbus_property(access=PropertyAccess.READ)
+        def Id(self) -> "s":
+            return "daybreak"
+
+        @dbus_property(access=PropertyAccess.READ)
+        def Title(self) -> "s":
+            return "Daybreak"
+
+        @dbus_property(access=PropertyAccess.READ)
+        def Status(self) -> "s":
+            return "Active"
+
+        @dbus_property(access=PropertyAccess.READ)
+        def IconName(self) -> "s":
+            return ""
+
+        @dbus_property(access=PropertyAccess.READ)
+        def IconPixmap(self) -> "a(iiay)":
+            return self._pixmap()
+
+        @dbus_property(access=PropertyAccess.READ)
+        def AttentionIconName(self) -> "s":
+            return ""
+
+        @dbus_property(access=PropertyAccess.READ)
+        def AttentionIconPixmap(self) -> "a(iiay)":
+            return []
+
+        @dbus_property(access=PropertyAccess.READ)
+        def OverlayIconName(self) -> "s":
+            return ""
+
+        @dbus_property(access=PropertyAccess.READ)
+        def OverlayIconPixmap(self) -> "a(iiay)":
+            return []
+
+        @dbus_property(access=PropertyAccess.READ)
+        def Menu(self) -> "o":
+            return self._menu_path
+
+        @dbus_property(access=PropertyAccess.READ)
+        def ItemIsMenu(self) -> "b":
+            return False
+
+        @dbus_property(access=PropertyAccess.READ)
+        def ToolTip(self) -> "(sa(iiay)ss)":
+            return ["", [], self._controller.tooltip_text(), ""]
+
+        @dbus_property(access=PropertyAccess.READ)
+        def IconThemePath(self) -> "s":
+            return ""
+
+        @dbus_property(access=PropertyAccess.READ)
+        def WindowId(self) -> "i":
+            return 0
+
+        @method()
+        def Activate(self, x: "i", y: "i") -> None:
+            self._controller.toggle_mode()
+            self.NewIcon()
+            self.NewToolTip()
+
+        @method()
+        def SecondaryActivate(self, x: "i", y: "i") -> None:
+            self._controller.toggle_mode()
+            self.NewIcon()
+            self.NewToolTip()
+
+        @method()
+        def ContextMenu(self, x: "i", y: "i") -> None:
+            pass
+
+        @method()
+        def Scroll(self, delta: "i", orientation: "s") -> None:
+            pass
+
+        @signal()
+        def NewIcon(self) -> None:
+            pass
+
+        @signal()
+        def NewToolTip(self) -> None:
+            pass
+
+        @signal()
+        def NewStatus(self, status: "s") -> None:
+            pass
+
+    bus = await MessageBus(bus_type=BusType.SESSION).connect()
+    service_name = f"org.kde.StatusNotifierItem-{os.getpid()}-1"
+    await bus.request_name(service_name)
+
+    controller = LinuxTrayController()
+    menu_iface = _DbusMenuInterface(controller)
+    sni_iface = _SniInterface(controller, "/MenuBar")
+    menu_iface._sni_iface = sni_iface
+
+    bus.export("/MenuBar", menu_iface)
+    bus.export("/StatusNotifierItem", sni_iface)
+
+    try:
+        intr = await bus.introspect(_SNI_WATCHER_SERVICE, _SNI_WATCHER_PATH)
+        watcher_proxy = bus.get_proxy_object(_SNI_WATCHER_SERVICE, _SNI_WATCHER_PATH, intr)
+        watcher = watcher_proxy.get_interface(_SNI_WATCHER_IFACE)
+        await watcher.call_register_status_notifier_item(service_name)
+    except Exception as exc:
+        logger.warning(f"Could not register with StatusNotifierWatcher: {exc}")
+
+    await stop_event.wait()
+    bus.disconnect()
+
+
+# ---------------------------------------------------------------------------
+# Entry point — tries dbus-python first, then dbus-fast
+# ---------------------------------------------------------------------------
+
+def run_linux_tray():
+    if platform.system() != "Linux":
+        raise RuntimeError("Linux tray mode is only available on Linux.")
+
+    # Preferred: dbus-python + GLib (C extension, ships with KDE)
+    try:
+        import dbus as _dbus  # noqa: F401
+        _run_tray_dbus_python()
+        return
+    except ImportError:
+        pass
+
+    # Fallback: dbus-fast (pure Python, no system packages needed)
+    try:
+        import dbus_fast as _dbus_fast  # noqa: F401
+        import asyncio
+        asyncio.run(_run_tray_dbus_fast())
+        return
+    except ImportError:
+        pass
+
+    raise SystemExit(
+        "A DBus library is required for the Linux tray. Install one of:\n"
+        "\n"
+        "  System package (preferred on KDE/Arch):\n"
+        "    sudo pacman -S python-dbus          # Arch / Manjaro\n"
+        "    sudo apt install python3-dbus        # Ubuntu / Debian\n"
+        "    sudo dnf install python3-dbus        # Fedora\n"
+        "\n"
+        "  Pure Python (works everywhere pip does):\n"
+        "    pip install dbus-fast"
+    )
