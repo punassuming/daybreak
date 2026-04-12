@@ -70,7 +70,7 @@ daybreak light
 # Open the Interactive Theme Selector
 daybreak select
 
-# Re-install or fix shell hooks
+# Re-install or fix shell hooks and refresh generated config artifacts
 daybreak setup
 
 # Run the Windows tray icon directly
@@ -79,8 +79,8 @@ daybreak tray
 
 ### Desktop & Tray Usage
 
-- **Linux (KDE-first):** `daybreak setup` now installs `~/.local/share/applications/daybreak.desktop`, so you can launch Daybreak from your application launcher, pin it to the panel, and use the Light/Dark quick actions without opening a terminal.
-- **Windows:** `daybreak setup` now installs hidden tray launchers in your Start Menu and Startup folder. The tray tooltip shows the current mode, double-click toggles light/dark, and right-click opens a menu with **Toggle**, **Light**, **Dark**, and **Exit**.
+- **Linux (KDE-first):** `daybreak setup` installs `~/.local/share/applications/daybreak.desktop`, configures tray autostart, and refreshes generated Daybreak config artifacts.
+- **Windows:** `daybreak setup` installs hidden tray launchers in your Start Menu and Startup folder, and refreshes generated Daybreak config artifacts.
 - **Direct tray launch:** Windows installs also expose a `daybreak-tray` GUI entry point for launching the tray icon without a console window.
 
 ### Interactive Selector Controls
@@ -147,10 +147,27 @@ Then run `daybreak light` or `daybreak dark` to apply the generated scheme.
 
 ## Neovim Integration
 
-Add this to your `init.lua` to automatically sync Neovim's background with Daybreak:
+Use the generated bootstrap in any Neovim setup (LazyVim, kickstart, custom init.lua):
 
 ```lua
-dofile(os.getenv("HOME") .. "/.config/daybreak/nvim_watcher.lua")
+dofile(vim.fn.expand("~/.config/daybreak/nvim_bootstrap.lua"))
+```
+
+`nvim_bootstrap.lua` provides:
+- startup load of Daybreak theme state
+- watcher-based live reloads when Daybreak updates `theme.lua`
+- `User DaybreakThemeChanged` handling
+- persistence of manual `:colorscheme` changes into Daybreak TOML keys per mode (`neovim_light_scheme` / `neovim_dark_scheme`)
+
+Advanced/manual setup can still load `nvim_watcher.lua` directly, but bootstrap is the preferred path.
+`daybreak light|dark|toggle` updates dynamic files (such as `theme.lua`) and mode state; `daybreak setup` is the command that (re)generates static support artifacts like `nvim_watcher.lua` and `nvim_bootstrap.lua`.
+
+Set NeoVim/LazyVim light/dark defaults in `~/.config/daybreak/config.toml`:
+
+```toml
+[integrations]
+neovim_light_scheme = "tokyonight-day"
+neovim_dark_scheme = "tokyonight"
 ```
 
 ## Configuration

@@ -25,9 +25,10 @@ def main(argv=None):
         return
 
     if args.mode == "setup":
-        from daybreak.shell_setup import install_shell_hook
+        from daybreak.shell_setup import install_shell_hook, refresh_generated_artifacts
 
         install_shell_hook()
+        refresh_generated_artifacts()
         return
 
     if args.mode == "tray":

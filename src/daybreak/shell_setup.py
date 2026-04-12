@@ -3,12 +3,141 @@ import platform
 import logging
 import shutil
 import shlex
+import json
 import stat
 import subprocess
 import sys
 from pathlib import Path
 
 logger = logging.getLogger("daybreak")
+
+
+def _normalize_integrations_section_text(content: str) -> str:
+    lines = content.splitlines()
+    output_lines = []
+    integrations = {}
+    integrations_order = []
+    insert_at = None
+    in_integrations = False
+
+    def _set_integration(key: str, rhs: str):
+        if not key:
+            return
+        if key in integrations:
+            integrations_order.remove(key)
+        integrations[key] = rhs
+        integrations_order.append(key)
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            section_name = stripped[1:-1].strip()
+            if section_name == "integrations":
+                in_integrations = True
+                if insert_at is None:
+                    insert_at = len(output_lines)
+                continue
+            in_integrations = False
+            output_lines.append(line)
+            continue
+
+        if in_integrations:
+            parts = line.split("=", 1)
+            if len(parts) == 2:
+                key = parts[0].strip()
+                rhs = parts[1].strip()
+                if key and rhs:
+                    _set_integration(key, rhs)
+            continue
+
+        output_lines.append(line)
+
+    if not integrations:
+        return content if content.endswith("\n") else content + "\n"
+
+    if insert_at is None:
+        insert_at = len(output_lines)
+
+    block = []
+    if insert_at > 0 and output_lines[insert_at - 1].strip() != "":
+        block.append("")
+    block.append("[integrations]")
+    for key in integrations_order:
+        block.append(f"{key} = {integrations[key]}")
+    if insert_at < len(output_lines) and output_lines[insert_at].strip() != "":
+        block.append("")
+
+    normalized_lines = output_lines[:insert_at] + block + output_lines[insert_at:]
+    return "\n".join(normalized_lines).rstrip() + "\n"
+
+
+def _normalize_integrations_section_file(path: Path) -> bool:
+    if not path.exists():
+        return False
+    original = path.read_text(encoding="utf-8")
+    normalized = _normalize_integrations_section_text(original)
+    if normalized == original:
+        return False
+    path.write_text(normalized, encoding="utf-8")
+    return True
+
+
+def refresh_generated_artifacts():
+    """
+    Refresh Daybreak-owned generated files in the config directory.
+
+    This is best-effort and intentionally avoids applying system/terminal mode
+    globally. It regenerates shared artifacts and Neovim helper files based on
+    the currently detected (or last known) mode.
+    """
+    from daybreak.config import config
+    from daybreak.core.artifacts import generate_artifacts
+    from daybreak.core.theme_model import normalize_mode
+    from daybreak.core.theme_registry import ThemeRegistry
+    from daybreak.terminals.neovim import Neovim
+
+    mode = None
+
+    # Prefer runtime-detected current mode when available.
+    try:
+        from daybreak.cli.runtime import build_orchestrator
+
+        mode = normalize_mode(build_orchestrator().get_current_mode())
+    except Exception as exc:
+        logger.debug(f"Could not detect current mode during setup refresh: {exc}")
+
+    # Fallback to last generated mode from palette artifact.
+    if mode not in ("light", "dark"):
+        try:
+            palette_path = config.config_dir / "palette.json"
+            if palette_path.exists():
+                data = json.loads(palette_path.read_text(encoding="utf-8"))
+                candidate = data.get("mode")
+                if candidate in ("light", "dark"):
+                    mode = candidate
+        except Exception as exc:
+            logger.debug(f"Could not read palette mode during setup refresh: {exc}")
+
+    if mode not in ("light", "dark"):
+        mode = "light"
+
+    try:
+        if _normalize_integrations_section_file(config.config_file):
+            logger.info(f"Normalized duplicate integrations sections in {config.config_file}")
+
+        registry = ThemeRegistry()
+        theme_name = config.get_mode_theme_name(mode)
+        palette = registry.get_palette(theme_name, mode)
+        tokens = registry.get_tokens(theme_name, mode)
+        accent_tokens = registry.get_accent_tokens(theme_name, mode)
+        generate_artifacts(config.config_dir, theme_name, mode, tokens, accent_tokens, palette)
+        neovim = Neovim(config_dir=config.config_dir)
+        neovim._generate_helper_plugin()
+        neovim._generate_bootstrap_plugin()
+        neovim.set_mode(mode)
+        logger.info(f"Refreshed Daybreak generated artifacts ({mode}: {theme_name}).")
+    except Exception as exc:
+        logger.warning(f"Failed to refresh Daybreak generated artifacts: {exc}")
 
 def get_shell_config(shell_name):
     home = Path.home()

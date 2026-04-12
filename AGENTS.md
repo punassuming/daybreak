@@ -41,6 +41,8 @@ This file is the single source of truth for contributor and agent workflows in t
 - Avoid claiming support for integrations that are placeholder-only.
 - Artifact generation (`core/artifacts.py`) must be fail-safe: failures are logged at WARNING and never abort the apply pipeline.
 - The `set_mode(mode, palette=None)` interface on system adapters accepts an optional palette so the orchestrator can pass live palette data without breaking existing adapter implementations.
+- NeoVim defaults are configured under `[integrations]` via `neovim_light_scheme` / `neovim_dark_scheme` and consumed by the NeoVim terminal adapter when generating `theme.lua`.
+- `daybreak setup` installs platform hooks/launchers and also refreshes Daybreak-owned generated artifacts (including Neovim bootstrap/watcher/theme files) without forcing a full mode apply.
 
 ## Common Workflows
 

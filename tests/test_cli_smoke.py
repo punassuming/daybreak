@@ -37,9 +37,11 @@ class CLISmokeTests(unittest.TestCase):
     def test_setup_dispatches_to_shell_setup(self):
         fake_module = types.ModuleType("daybreak.shell_setup")
         fake_module.install_shell_hook = Mock()
+        fake_module.refresh_generated_artifacts = Mock()
         with patch.dict(sys.modules, {"daybreak.shell_setup": fake_module}):
             main(["setup"])
         fake_module.install_shell_hook.assert_called_once_with()
+        fake_module.refresh_generated_artifacts.assert_called_once_with()
 
     def test_tray_dispatches_to_platform_tray(self):
         import platform as _platform
