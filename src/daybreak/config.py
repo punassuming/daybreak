@@ -32,6 +32,8 @@ DEFAULT_CONFIG = {
         "windows_terminal_dark_scheme": "One Half Dark",
         "obsidian_light_theme": "moonstone",
         "obsidian_dark_theme": "obsidian",
+        "neovim_light_scheme": "tokyonight-day",
+        "neovim_dark_scheme": "tokyonight",
     },
 }
 
@@ -144,6 +146,13 @@ class ConfigManager:
             self._save(self.data)
         except Exception as exc:
             logger.warning(f"Failed to save config: {exc}")
+
+    def reload(self):
+        """Reload config data from disk, keeping prior data on failure."""
+        try:
+            self.data = self._load()
+        except Exception as exc:
+            logger.warning(f"Failed to reload config: {exc}")
 
     def get(self, section, key, default=None):
         section_data = self.data.get(section, {})
