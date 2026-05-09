@@ -24,6 +24,7 @@ class ThemeOrchestrator:
             return "light"
 
     def apply(self, mode: str, theme_name: str = None) -> str:
+        config.reload()
         normalized_mode = normalize_mode(mode)
         resolved_theme = theme_name or config.get_mode_theme_name(normalized_mode)
         palette = self.registry.get_palette(resolved_theme, normalized_mode)

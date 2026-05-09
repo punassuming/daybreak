@@ -4,6 +4,7 @@ from ctypes import c_size_t
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
+from unittest import mock
 
 SRC_DIR = Path(__file__).resolve().parents[1] / "src"
 if str(SRC_DIR) not in sys.path:
@@ -31,8 +32,8 @@ class TrayControllerTests(unittest.TestCase):
     def test_tooltip_uses_current_mode(self):
         orchestrator = Mock()
         orchestrator.get_current_mode.return_value = "dark"
-
-        controller = TrayController(orchestrator=orchestrator)
+        with mock.patch("daybreak.windows_tray.config.get_mode_theme_name", return_value="Nord"):
+            controller = TrayController(orchestrator=orchestrator)
 
         self.assertEqual(controller.tooltip_text(), "Daybreak (Dark: Nord)")
         self.assertEqual(controller.status_text(), "Dark mode - Nord")

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p C:/drive/dev/os/db2/linux/systemd)",
+      "Bash(mv C:/drive/dev/os/db2/systemd/daybreak-dark.service C:/drive/dev/os/db2/systemd/daybreak-dark.timer C:/drive/dev/os/db2/systemd/daybreak-light.service C:/drive/dev/os/db2/systemd/daybreak-light.timer C:/drive/dev/os/db2/linux/systemd/)"
+    ]
+  }
+}

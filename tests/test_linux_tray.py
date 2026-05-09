@@ -85,6 +85,20 @@ class LinuxTrayControllerTests(unittest.TestCase):
         cmd = mock_popen.call_args[0][0]
         self.assertEqual(cmd[0], "xdg-open")
 
+    def test_light_command_sends_daybreak_notification(self):
+        controller = self._make_controller("dark")
+        controller.orchestrator.apply.return_value = "Catppuccin"
+
+        with patch("daybreak.linux_tray.subprocess.run") as mock_run:
+            self.assertTrue(controller.handle_command(ID_LIGHT))
+
+        mock_run.assert_called_once()
+        cmd = mock_run.call_args.args[0]
+        self.assertEqual(cmd[0], "notify-send")
+        self.assertIn("Daybreak: Light", cmd)
+        self.assertTrue(any("Source: Tray -> Switch to Light" in part for part in cmd))
+        self.assertTrue(any("Theme: Catppuccin" in part for part in cmd))
+
 
 class SniPixmapTests(unittest.TestCase):
     def test_light_and_dark_pixels_correct_size(self):

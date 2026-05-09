@@ -75,6 +75,34 @@ class LinuxTrayController:
         logger.info(f"Switched to {mode} mode using theme '{theme_name}'.")
         return mode, theme_name
 
+    def _notify(self, summary: str, body: str):
+        """Best-effort desktop notification for Linux tray actions."""
+        try:
+            subprocess.run(
+                [
+                    "notify-send",
+                    "-a",
+                    "Daybreak",
+                    "-i",
+                    "preferences-desktop-display-color",
+                    summary,
+                    body,
+                ],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except FileNotFoundError:
+            logger.debug("notify-send not available; skipping desktop notification.")
+        except Exception as exc:
+            logger.debug(f"Failed to send desktop notification: {exc}")
+
+    def _notify_mode_change(self, source: str):
+        self._notify(
+            f"Daybreak: {self.current_mode.title()}",
+            f"{source}\nTheme: {self.current_theme}",
+        )
+
     def open_config(self):
         self._config.save()
         subprocess.Popen(["xdg-open", str(self._config.config_file)])
@@ -87,18 +115,23 @@ class LinuxTrayController:
     def handle_command(self, command_id: int) -> bool:
         if command_id == ID_TOGGLE:
             self.toggle_mode()
+            self._notify_mode_change("Source: Tray Toggle")
             return True
         if command_id == ID_LIGHT:
             self.apply_mode("light")
+            self._notify_mode_change("Source: Tray -> Switch to Light")
             return True
         if command_id == ID_DARK:
             self.apply_mode("dark")
+            self._notify_mode_change("Source: Tray -> Switch to Dark")
             return True
         if command_id == ID_OPEN_CONFIG:
             self.open_config()
+            self._notify("Daybreak: Open Config", "Source: Tray -> Open Config")
             return True
         if command_id == ID_RUN_SETUP:
             self.run_setup()
+            self._notify("Daybreak: Setup", "Source: Tray -> Run Setup")
             return True
         if command_id == ID_EXIT:
             return False
