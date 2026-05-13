@@ -1,0 +1,42 @@
+{
+  "name": "daybreak",
+  "version": "1.0.0",
+  "description": "Daybreak is a cross-platform CLI tool designed to toggle system and terminal themes instantly. It provides a unified interface to switch between Light and Dark modes across your entire OS environment, including the desktop environment (KDE Plasma), terminal emulators (Kitty, Ghostty, WezTerm, Konsole, etc.), editors (Neovim), and shell sessions.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/punassuming/daybreak.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/punassuming/daybreak/issues"
+  },
+  "homepage": "https://github.com/punassuming/daybreak#readme",
+  "devDependencies": {
+    "@types/blessed": "^0.1.27",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.7.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
+    "eslint": "^10.3.0",
+    "jest": "^30.4.2",
+    "prettier": "^3.8.3",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "commander": "^14.0.3",
+    "smol-toml": "^1.6.1"
+  }
+}
