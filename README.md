@@ -55,6 +55,14 @@ pipx install .
 daybreak setup
 ```
 
+### Install via Scoop (Windows, in progress)
+
+A Go rewrite (`go/`) ships as a single dependency-free binary — no Python
+runtime needed — and is the intended path for Scoop distribution going
+forward. It's not published yet; see `go/README.md` for build, test, and
+local-install instructions, including how to try a build before it's a
+real release.
+
 ## Usage
 
 ### Basic Commands
