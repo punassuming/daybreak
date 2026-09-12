@@ -317,7 +317,7 @@ func Run(orch *orchestrator.Orchestrator) error {
 	hInstance, _, _ := procGetModuleHandleW.Call(0)
 
 	createTrayIcon := func(mode string) windows.Handle {
-		pixels := renderModeIconPixels(mode, 32)
+		pixels := RenderModeIconPixels(mode, 32)
 
 		header := bitmapV5Header{
 			width:       32,

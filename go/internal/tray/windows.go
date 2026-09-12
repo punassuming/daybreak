@@ -115,4 +115,4 @@ func shellExecuteOpen(path string) {
 	shellExecuteW.Call(0, uintptr(unsafe.Pointer(verb)), uintptr(unsafe.Pointer(p)), 0, 0, 1)
 }
 
-// renderModeIconPixels now lives in icon.go (shared with the Linux tray).
+// RenderModeIconPixels now lives in icon.go (shared with the Linux tray).

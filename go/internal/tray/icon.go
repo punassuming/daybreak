@@ -15,9 +15,9 @@ const (
 	idRunSetup   = 1006
 )
 
-// renderModeIconPixels mirrors windows_tray._render_mode_icon_pixels: a
+// RenderModeIconPixels mirrors windows_tray._render_mode_icon_pixels: a
 // hand-drawn 32x32 BGRA sun (light) or crescent moon + stars (dark) icon.
-func renderModeIconPixels(mode string, size int) []byte {
+func RenderModeIconPixels(mode string, size int) []byte {
 	pixels := make([]byte, size*size*4)
 	center := float64(size-1) / 2.0
 	sunRadius := float64(size) * 0.22

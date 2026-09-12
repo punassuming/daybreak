@@ -62,6 +62,42 @@ the safe way to produce real release artifacts locally. A real
 `GITHUB_TOKEN` set and pushes a GitHub release for the current tag; that's
 what `.github/workflows/release.yml` runs on `git push --tags`.
 
+## App icon (Windows)
+
+`assets/daybreak.ico` (checked in) is generated from the same pixel art
+the tray icon already draws at runtime (`tray.RenderModeIconPixels`), via:
+
+```sh
+go run ./tools/genicon   # regenerate assets/daybreak.ico if the icon design changes
+```
+
+It's embedded into `daybreak.exe`/`daybreak-tray.exe` via `.syso` files
+(also checked in: `cmd/daybreak/rsrc_windows_*.syso`,
+`cmd/daybreak-tray/rsrc_windows_*.syso`) that `go build` links in
+automatically — nothing extra needed for a normal build or for CI/goreleaser.
+Regenerate them after changing the icon or version/product metadata:
+
+```sh
+go install github.com/tc-hib/go-winres@latest   # one-time
+go-winres simply --arch amd64,arm64 --icon assets/daybreak.ico \
+  --manifest cli --product-name Daybreak \
+  --file-description "Daybreak: toggle system and terminal light/dark themes" \
+  --original-filename daybreak.exe --out cmd/daybreak/rsrc
+go-winres simply --arch amd64,arm64 --icon assets/daybreak.ico \
+  --manifest gui --product-name Daybreak \
+  --file-description "Daybreak tray icon" \
+  --original-filename daybreak-tray.exe --out cmd/daybreak-tray/rsrc
+```
+
+The Start Menu/Startup shortcut (`internal/shellsetup`'s
+`installWindowsTrayLauncher`) is a real `.lnk` (built via PowerShell's
+`WScript.Shell` COM object — there's no pure-Go way to write the binary
+.lnk format), not a `.vbs` like older installs: a `.vbs` in the Start Menu
+always shows a generic script icon no matter what it launches. It also
+resolves through a Scoop shim's companion `.shim` file to point the
+shortcut's icon at the real installed `daybreak-tray.exe` — the shim
+`.exe` itself carries a generic Scoop stub icon, not the app's.
+
 ## Installing your own build locally via Scoop
 
 Useful for trying a build before it's ever published as a real release.

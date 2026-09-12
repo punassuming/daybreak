@@ -140,7 +140,7 @@ func (c *Controller) HandleCommand(id int) bool {
 // renderModeIconPixels' BGRA output to the ARGB32 big-endian format the SNI
 // IconPixmap property requires.
 func renderSNIIconPixels(mode string, size int) []byte {
-	bgra := renderModeIconPixels(mode, size)
+	bgra := RenderModeIconPixels(mode, size)
 	result := make([]byte, len(bgra))
 	for i := 0; i < len(bgra); i += 4 {
 		result[i] = bgra[i+3]   // alpha
