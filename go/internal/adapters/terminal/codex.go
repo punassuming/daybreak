@@ -10,12 +10,17 @@ import (
 )
 
 // CodexAdapter sets `[tui].theme` in ~/.codex/config.toml (OpenAI Codex
-// CLI). Codex's 32 bundled themes are TextMate-derived kebab-case slugs
-// (e.g. "gruvbox-dark") without a documented complete catalog, so — like
-// Yazi — there's no safe universal default to guess; this is opt-in via
-// codex_light_theme / codex_dark_theme. Only patches an existing
+// CLI). Codex's 32 bundled themes are TextMate-derived kebab-case slugs;
+// "one-half-light"/"one-half-dark" (matching the Windows Terminal
+// defaults) were confirmed valid live via Codex's own /theme picker.
+// Still overridable via codex_light_theme / codex_dark_theme for anyone
+// who prefers a different bundled theme. Only patches an existing
 // config.toml; never creates one, since Codex's config carries many
 // required-looking settings this adapter has no business inventing.
+//
+// Note: `tui.theme` controls Codex's syntax-highlighting palette. If the
+// terminal input box itself still looks wrong after this applies, that
+// background likely comes from the enclosing terminal, not from Codex.
 type CodexAdapter struct {
 	Config *config.Manager
 }

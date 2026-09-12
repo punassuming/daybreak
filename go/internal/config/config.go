@@ -88,20 +88,20 @@ func defaultData() Data {
 			ObsidianDarkTheme:          "obsidian",
 			NeovimLightScheme:          "tokyonight-day",
 			NeovimDarkScheme:           "tokyonight",
-			// Herdr and Claude Code ship these as built-in presets, so they're
-			// always valid out of the box. Yazi flavors and Codex themes are
-			// left blank by default (opt-in) because the correct value depends
-			// on which flavor/theme package the user has separately installed
-			// — a wrong guess here would point those tools at something that
-			// doesn't exist.
+			// Herdr, Claude Code, and Codex ship these as built-in presets
+			// (Codex's confirmed live via its own /theme picker), so they're
+			// always valid out of the box. Yazi flavors are left blank by
+			// default (opt-in) because the correct value depends on which
+			// flavor package the user has separately installed — a wrong
+			// guess here would point yazi at something that doesn't exist.
 			HerdrLightTheme:      "catppuccin-latte",
 			HerdrDarkTheme:       "catppuccin",
 			YaziLightFlavor:      "",
 			YaziDarkFlavor:       "",
 			ClaudeCodeLightTheme: "light",
 			ClaudeCodeDarkTheme:  "dark",
-			CodexLightTheme:      "",
-			CodexDarkTheme:       "",
+			CodexLightTheme:      "one-half-light",
+			CodexDarkTheme:       "one-half-dark",
 		},
 	}
 }
