@@ -1,0 +1,73 @@
+version: 2
+
+project_name: daybreak
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: daybreak
+    main: ./cmd/daybreak
+    binary: daybreak
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+  - id: daybreak-tray-windows
+    main: ./cmd/daybreak-tray
+    binary: daybreak-tray
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -H=windowsgui -X main.version={{.Version}}
+
+  - id: daybreak-tray-linux
+    main: ./cmd/daybreak-tray
+    binary: daybreak-tray
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: daybreak-archive
+    ids:
+      - daybreak
+      - daybreak-tray-windows
+      - daybreak-tray-linux
+    formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  github:
+    owner: punassuming
+    name: daybreak
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
