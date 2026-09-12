@@ -355,7 +355,7 @@ function M.get_target_colorscheme()
 end
 
 function M.toggle_daybreak()
-  local cmd = { "daybreak", "toggle" }
+  local cmd = {{ "daybreak", "toggle" }}
 
   local function notify_success(stdout)
     local out = (stdout or ""):gsub("%s+$", "")

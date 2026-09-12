@@ -195,16 +195,19 @@ def _install_powershell_hook():
     # On Windows, usually $HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1
     # or $HOME\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
     try:
-        # Ask PowerShell for the CurrentUserCurrentHost profile path
+        # Query pwsh (PowerShell 7+) before Windows PowerShell 5.1's
+        # `powershell`: on a machine with both installed, pwsh is virtually
+        # always the one the user actually runs, and hooking the one
+        # nobody launches silently no-ops setup.
         result = subprocess.run(
-            ["powershell", "-NoProfile", "-Command", "Write-Host $PROFILE.CurrentUserCurrentHost"],
+            ["pwsh", "-NoProfile", "-Command", "Write-Host $PROFILE.CurrentUserCurrentHost"],
             capture_output=True, text=True
         )
         profile_path_str = result.stdout.strip()
         if not profile_path_str:
-            # Try pwsh (PowerShell Core)
+            # Fall back to Windows PowerShell 5.1
              result = subprocess.run(
-                ["pwsh", "-NoProfile", "-Command", "Write-Host $PROFILE.CurrentUserCurrentHost"],
+                ["powershell", "-NoProfile", "-Command", "Write-Host $PROFILE.CurrentUserCurrentHost"],
                 capture_output=True, text=True
             )
              profile_path_str = result.stdout.strip()
