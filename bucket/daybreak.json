@@ -1,0 +1,39 @@
+{
+    "version": "0.1.0",
+    "description": "Cross-platform CLI to toggle system and terminal light/dark themes.",
+    "homepage": "https://github.com/punassuming/daybreak",
+    "license": "MIT",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/punassuming/daybreak/releases/download/v0.1.0/daybreak_0.1.0_windows_amd64.zip",
+            "hash": "REPLACE_WITH_SHA256_FROM_checksums.txt"
+        },
+        "arm64": {
+            "url": "https://github.com/punassuming/daybreak/releases/download/v0.1.0/daybreak_0.1.0_windows_arm64.zip",
+            "hash": "REPLACE_WITH_SHA256_FROM_checksums.txt"
+        }
+    },
+    "bin": [
+        "daybreak.exe",
+        "daybreak-tray.exe"
+    ],
+    "post_install": [
+        "& \"$dir\\daybreak.exe\" setup"
+    ],
+    "checkver": {
+        "github": "https://github.com/punassuming/daybreak"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/punassuming/daybreak/releases/download/v$version/daybreak_$version_windows_amd64.zip"
+            },
+            "arm64": {
+                "url": "https://github.com/punassuming/daybreak/releases/download/v$version/daybreak_$version_windows_arm64.zip"
+            }
+        },
+        "hash": {
+            "url": "$baseurl/checksums.txt"
+        }
+    }
+}
