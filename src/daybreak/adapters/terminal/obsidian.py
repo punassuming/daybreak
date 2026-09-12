@@ -12,6 +12,18 @@ OBSIDIAN_GLOBAL_SETTINGS = Path(r"obsidian\obsidian.json")
 
 
 class ObsidianAdapter:
+    """Sets the "theme" key in Obsidian's global settings file
+    (%APPDATA%\\obsidian\\obsidian.json), the app-wide default new vaults
+    inherit.
+
+    Deliberately does NOT also loop over every vault registered in that
+    file and overwrite each vault's own .obsidian/app.json: that forces
+    vaults with their own deliberate theme choice (e.g. a non-coding notes
+    vault) to match Daybreak's mode too, which surprised a user in
+    practice once this adapter was actually wired in. Global-only leaves
+    per-vault choices alone.
+    """
+
     name = "obsidian"
 
     def apply_mode(self, mode: str, theme_name: str, palette: dict = None):
@@ -33,52 +45,14 @@ class ObsidianAdapter:
             logger.debug("Obsidian: global settings file not found, skipping.")
             return
 
-        vault_paths = []
         try:
             global_data = load_jsonc_file(global_path)
-            changed = False
-            if isinstance(global_data, dict):
-                if global_data.get("theme") != target_theme:
-                    global_data["theme"] = target_theme
-                    changed = True
-
-                vault_paths = _extract_vault_paths(global_data)
-
-            if changed:
-                dump_json_file(global_path, global_data)
-                logger.info(f"Obsidian: Applied theme '{target_theme}' to {global_path}")
+            if not isinstance(global_data, dict):
+                return
+            if global_data.get("theme") == target_theme:
+                return
+            global_data["theme"] = target_theme
+            dump_json_file(global_path, global_data)
+            logger.info(f"Obsidian: Applied theme '{target_theme}' to {global_path}")
         except Exception as exc:
             logger.warning(f"Obsidian: Failed to update {global_path}: {exc}")
-
-        for vault_path in vault_paths:
-            app_json = vault_path / ".obsidian" / "app.json"
-            if not app_json.exists():
-                continue
-            try:
-                app_data_json = load_jsonc_file(app_json)
-                if not isinstance(app_data_json, dict):
-                    continue
-                if app_data_json.get("theme") == target_theme:
-                    continue
-                app_data_json["theme"] = target_theme
-                dump_json_file(app_json, app_data_json)
-                logger.info(f"Obsidian: Applied theme '{target_theme}' to {app_json}")
-            except Exception as exc:
-                logger.warning(f"Obsidian: Failed to update {app_json}: {exc}")
-
-
-def _extract_vault_paths(global_data: dict):
-    vaults = global_data.get("vaults")
-    if not isinstance(vaults, dict):
-        return []
-
-    results = []
-    for entry in vaults.values():
-        if not isinstance(entry, dict):
-            continue
-        path_value = entry.get("path")
-        if isinstance(path_value, str) and path_value:
-            vault_path = Path(path_value)
-            if vault_path.exists():
-                results.append(vault_path)
-    return results

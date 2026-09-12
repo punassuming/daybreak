@@ -93,7 +93,10 @@ class WindowsIntegrationAdapterTests(unittest.TestCase):
         self.assertEqual(result["profiles"]["list"][0]["colorScheme"], "One Half Light")
         self.assertNotIn("colorScheme", result["profiles"]["list"][1])
 
-    def test_obsidian_adapter_updates_global_and_vault_theme(self):
+    def test_obsidian_adapter_updates_global_theme_only(self):
+        # A vault's own theme choice must survive Daybreak toggles —
+        # ObsidianAdapter only sets the global default, not per-vault
+        # app.json files (see obsidian.py's docstring for why).
         vault_path = self.test_root / "vault-a"
         (vault_path / ".obsidian").mkdir(parents=True, exist_ok=True)
         app_json = vault_path / ".obsidian" / "app.json"
@@ -116,7 +119,7 @@ class WindowsIntegrationAdapterTests(unittest.TestCase):
         global_result = json.loads(global_path.read_text(encoding="utf-8"))
         vault_result = json.loads(app_json.read_text(encoding="utf-8"))
         self.assertEqual(global_result["theme"], "moonstone")
-        self.assertEqual(vault_result["theme"], "moonstone")
+        self.assertEqual(vault_result["theme"], "obsidian")
 
 if __name__ == "__main__":
     unittest.main()
