@@ -15,7 +15,7 @@ func BuildLinuxTerminalAdapters(cfg *config.Manager) []orchestrator.TerminalAdap
 	return []orchestrator.TerminalAdapter{
 		UniversalPtyAdapter{Config: cfg},
 		NewNeovimAdapter(cfg),
-		KittyAdapter{},
+		KittyAdapter{ConfigDir: cfg.ConfigDir},
 		NewGhosttyAdapter(),
 		NewWezTermAdapter(),
 		KonsoleAdapter{},

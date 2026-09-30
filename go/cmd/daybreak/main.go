@@ -15,13 +15,17 @@ import (
 	"daybreak/internal/shellsetup"
 )
 
+// version is injected by GoReleaser for release binaries.
+var version = "dev"
+
 func main() {
 	log.SetFlags(0)
 
 	root := &cobra.Command{
-		Use:   "daybreak [light|dark|toggle|select|setup|tray]",
-		Short: "Daybreak: Toggle system and application themes.",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "daybreak [light|dark|toggle|select|setup|tray]",
+		Short:   "Daybreak: Toggle system and application themes.",
+		Version: version,
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mode := "toggle"
 			if len(args) == 1 {

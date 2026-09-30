@@ -3,6 +3,7 @@ package terminal
 import (
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 
@@ -59,6 +60,9 @@ func (a HerdrAdapter) ApplyMode(mode, _ string, _ theme.Palette) error {
 		return nil
 	}
 	log.Printf("herdr: applied theme '%s' to %s", targetName, path)
+	if err := exec.Command("herdr", "server", "reload-config").Run(); err != nil {
+		log.Printf("herdr: theme was written, but failed to reload the running server: %v", err)
+	}
 	return nil
 }
 
