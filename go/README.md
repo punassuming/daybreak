@@ -1,9 +1,8 @@
-# Daybreak (Go build)
+# Daybreak (Go)
 
-Go port of the Python `daybreak` CLI (`../src/daybreak`), built as a single
-dependency-free binary so it can ship via Scoop instead of pip/pipx. See
-the root `README.md`/`AGENTS.md` for what Daybreak does; this file only
-covers building, testing, and installing *this* Go build.
+Daybreak is implemented in Go and distributed as release binaries. See the
+root `README.md`/`AGENTS.md` for product behavior; this file covers building,
+testing, and release packaging.
 
 ## Status
 
@@ -155,21 +154,16 @@ scoop install daybreak/daybreak
 ## Layout
 
 - `cmd/daybreak` — the CLI (`toggle|light|dark|select|setup|tray`)
-- `cmd/daybreak-tray` — GUI-subsystem tray-only entry point (Windows: no
-  console window; Linux: same tray, mirrors the Python `daybreak-tray-linux`
-  console script)
+- `cmd/daybreak-tray` — tray-only entry point (Windows: no console window)
 - `internal/theme`, `internal/config`, `internal/orchestrator`,
-  `internal/artifacts` — core engine, ported line-for-line from
-  `../src/daybreak/{themes,colors,config,core}.py`
+  `internal/artifacts` — core engine
 - `internal/adapters/system` — Windows registry + KDE `plasma-apply-*`,
-  plus cursor-scheme switching (not in the Python original)
+  plus cursor-scheme switching
 - `internal/adapters/terminal` — Windows Terminal, Obsidian, Kitty,
-  Konsole, Ghostty, WezTerm, Neovim, universal PTY broadcast, plus four
-  integrations with no Python equivalent yet: herdr, yazi, Claude Code,
-  Codex CLI
+  Konsole, Ghostty, WezTerm, Neovim, universal PTY broadcast, herdr, yazi,
+  Claude Code, and Codex CLI
 - `internal/selector` — tcell-based theme picker (`daybreak select`),
-  replacing curses (which doesn't work on Windows without the unlisted
-  `windows-curses` dependency)
+  usable on Windows and Linux
 - `internal/shellsetup` — `daybreak setup`: shell hooks, Windows tray
   launchers, Linux desktop entry/autostart, generated-artifact refresh
 - `internal/tray` — Windows Win32 tray (raw syscalls, no third-party tray

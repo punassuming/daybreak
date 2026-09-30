@@ -32,36 +32,16 @@ For contributor and agent implementation rules, see `AGENTS.md` in the repositor
 
 ## Installation
 
-### Prerequisites
-- Python 3.7+
-- Linux (KDE Plasma recommended) or Windows 10/11
+Download the archive for your OS and architecture from the [GitHub Releases](https://github.com/punassuming/daybreak/releases) page, unpack it, and place `daybreak` (and optionally `daybreak-tray`) on your `PATH`. On Windows, the release archive includes `.exe` files. Run `daybreak setup` to install platform launchers and shell hooks.
 
-### Install via pip (Recommended)
+To build from source, install the Go version declared in `go/go.mod`, then run:
 
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/daybreak.git
-cd daybreak
-
-# Install in a virtual environment
-python3 -m venv venv
-source venv/bin/activate
-pip install .
-
-# Or install globally using pipx
-pipx install .
-
-# Automatically install shell hooks for Bash, Zsh, Fish, or PowerShell
-daybreak setup
+```sh
+cd go
+go build -o dist/daybreak ./cmd/daybreak
 ```
 
-### Install via Scoop (Windows, in progress)
-
-A Go rewrite (`go/`) ships as a single dependency-free binary — no Python
-runtime needed — and is the intended path for Scoop distribution going
-forward. It's not published yet; see `go/README.md` for build, test, and
-local-install instructions, including how to try a build before it's a
-real release.
+See [go/README.md](go/README.md) for platform builds and release packaging.
 
 ## Usage
 
